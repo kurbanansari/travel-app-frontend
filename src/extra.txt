@@ -1,0 +1,2309 @@
+    <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <Button
+            size="lg"
+            // variant="default"
+            className="w-full bg-green-700 hover:bg-green-800 mt-4 mb-4"
+          >
+            Upload Photo
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload a Photo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                setFile(e.target.files ? e.target.files[0] : null)
+              }
+            />
+            <Input
+              type="text"
+              placeholder="Enter a caption..."
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+            <Button onClick={handleUpload} className="w-full">
+              Upload
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
+
+      photo components:
+
+       <div className="w-full max-w-xl mx-auto">
+        {photosLoading ? (
+          <div className="text-center">Loading photos...</div>
+        ) : photos.length === 0 ? (
+          <div className="text-center text-gray-500">No photos uploaded yet.</div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+            {photos?.map((photo: any ,index: number) => (
+              <div key={photo.id || index} className="relative">
+                <SmartImage
+                  src={photo.url || `http://localhost:8080/photos/${photo.filename}`}
+                  alt={photo.caption || "Trip Photo"}
+                  className="rounded-xl object-cover w-full h-40"
+                />
+                {photo.caption && (
+                  <p className="mt-1 text-sm text-gray-700 text-center">
+                    {photo.caption}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+
+
+      selected={selected} setSelected={setSelected}
+
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 p-4">
+        {photos.map((photo: any) => (
+          <div
+            key={photo.id}
+            className={`relative cursor-pointer rounded-xl overflow-hidden border-4 ${
+              selected.includes(photo.id) ? "border-blue-600" : "border-transparent"
+            }`}
+            onClick={() => toggleSelect(photo.id)}
+          >
+            <Image
+              src={photo.url || `http://localhost:8080/photos/${photo.filename}`}
+              alt={photo.caption || "Photo"}
+              width={400}
+              height={400}
+              className="object-cover w-full h-40"
+              unoptimized
+            />
+          </div>
+        ))}
+      </div>
+
+
+
+       @@unique([user_id, animation_style_id])
+
+       adding cammand 
+       npx prisma migrate dev --name add_animation_unique_constraint
+
+
+
+         const handleShare = async (platform: "instagram" | "facebook" | "whatsapp" | "twitter") => {
+  if (!token || item.isShare) return;
+
+  try {
+    const res = await fetch("http://localhost:8080/feed/share", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "*/*",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        targetId: item.id,
+        targetType: item.type,
+        platform, // already uppercase string
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to share");
+
+    onItemUpdate({
+      ...item,
+      isShare: true,
+      shareCount: item.shareCount + 1,
+    });
+  } catch (err) {
+    console.error("Error sharing post:", err);
+  }
+};
+
+
+
+postCard:
+// components/PostCard.tsx
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { io, Socket } from "socket.io-client";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { FaShare } from "react-icons/fa";
+import { DropdownMenu , DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger, } from "./dropdown-menu";
+import { FaFacebook, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import { SmartImage } from "./SmartImage";
+import { } from "@/redux/slices/photoSlice";
+import toast from "react-hot-toast";
+
+
+
+
+type User = {
+  id: string;
+  name: string;
+  profilePic: string | null;
+  isFollowing?: boolean;
+};
+
+type AnimationFeed = {
+  type: "ANIMATION";
+  id: string;
+  title: string;
+  video_url: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?: string[];
+  likeId?: string | null;
+};
+
+type PhotoFeed = {
+  type: "PHOTO";
+  id: string;
+  url: string;
+  caption: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?: string[];
+  likeId?: string | null;
+};
+
+type FeedItem = AnimationFeed | PhotoFeed;
+
+type Comment = {
+  id: string;
+  text: string;
+  user: User;
+  created_at: string;
+};
+
+const SOCKET_URL = "http://localhost:8080";
+
+
+const PostCard = ({ item, onItemUpdate }: { item: FeedItem; onItemUpdate: (updatedItem: FeedItem) => void }) => {
+  const [token, setToken] = useState<string | null>(null);
+  const [openCommentsForId, setOpenCommentsForId] = useState<string | null>(null);
+  const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
+  const [commentText, setCommentText] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [followLoadingId, setFollowLoadingId] = useState<string | null>(null);
+  const [socket, setSocket] = useState<Socket | null>(null);
+
+  useEffect(() => {
+    const t = localStorage.getItem("token");
+    setToken(t);
+
+    const s = io(SOCKET_URL, { transports: ["websocket"] });
+    setSocket(s);
+
+    return () => {
+      s.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    socket.on("likeUpdate", (data) => {
+      if (item.id === data.targetId) {
+        const updatedItem = {
+          ...item,
+          likesCount:
+            data.action === "LIKE"
+              ? item.likesCount + 1
+              : data.action === "UNLIKE"
+              ? Math.max(0, item.likesCount - 1)
+              : item.likesCount,
+          isLiked:
+            data.userId === localStorage.getItem("userId")
+              ? data.action === "LIKE"
+                ? true
+                : data.action === "UNLIKE"
+                ? false
+                : item.isLiked
+              : item.isLiked,
+        };
+        onItemUpdate(updatedItem);
+      }
+    });
+
+   socket.on("shareUpdate", (data) => {
+    if (item.id === data.targetId) {
+      const updatedItem: FeedItem = {
+        ...item,
+        shareCount: (item.shareCount || 0) + 1,
+        // If the current user shared, append platform to isShare[]
+        isShare:
+          data.userId === localStorage.getItem("userId")
+            ? [...(item.isShare || []), data.platform]
+            : item.isShare,
+      };
+      onItemUpdate(updatedItem);
+    }
+  });
+
+
+
+
+
+
+
+    socket.on("commentUpdate", (data) => {
+      if (item.id === data.targetId && data.action === "ADD") {
+        setCommentsMap((prev) => ({
+          ...prev,
+          [data.targetId]: [data.comment, ...(prev[data.targetId] || [])],
+        }));
+        const updatedItem = { ...item, commentsCount: item.commentsCount + 1 };
+        onItemUpdate(updatedItem);
+      }
+    });
+
+    return () => {
+      socket.off("likeUpdate");
+      socket.off("commentUpdate");
+      socket.off("shareUpdate")
+    };
+  }, [socket, item.id, onItemUpdate]);
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit("subscribeToTarget", item.id);
+  }, [socket, item.id]);
+
+  const openComments = async (type: string, id: string) => {
+    if (!token) return;
+    setOpenCommentsForId(id);
+    setCommentLoading(true);
+    try {
+      const res = await fetch(
+        `http://localhost:8080/feed/comments/${type}/${id}?page=1&limit=10`,
+        {
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      setCommentsMap((prev) => ({ ...prev, [id]: data.comments || [] }));
+    } catch {
+      setCommentsMap((prev) => ({ ...prev, [id]: [] }));
+    }
+    setCommentLoading(false);
+  };
+
+
+  const postComment = async (type: string, id: string) => {
+    if (!token || !commentText.trim()) return;
+    setCommentLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/feed/comment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetId: item.id,
+          targetType: item.type,
+          text: commentText,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.comment) {
+        setCommentsMap((prev) => ({
+          ...prev,
+          [item.id]: [data.comment, ...(prev[item.id] || [])],
+        }));
+        setCommentText("");
+        const updatedItem = { ...item, commentsCount: item.commentsCount + 1 };
+        onItemUpdate(updatedItem);
+      }
+    } catch {}
+    setCommentLoading(false);
+  };
+
+const handleLike = async () => {
+  if (!token) {
+    toast.error("You must be logged in to like content.");
+    return;
+  }
+
+  try {
+    let res;
+    let data;
+
+    if (!item.isLiked) {
+      // ✅ Like API
+      res = await fetch("http://localhost:8080/feed/like", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetId: item.id,
+          targetType: item.type.toUpperCase(),
+        }),
+      });
+
+      data = await res.json();
+
+      if (res.ok) {
+        item.isLiked = true;
+        item.likeId = data.data.likeId;
+      } else if (data?.error?.code === "DUPLICATE_ENTRY") {
+        // 👇 Fetch existing likeId (new API call)
+        const existingRes = await fetch(
+          `http://localhost:8080/feed/like/existing?targetId=${item.id}&targetType=${item.type.toUpperCase()}`,
+          {
+            headers: {
+              Accept: "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        const existingData = await existingRes.json();
+
+        if (existingRes.ok && existingData?.data?.likeId) {
+          item.isLiked = true;
+          item.likeId = existingData.data.likeId;
+        }
+      }
+    } else {
+      // ✅ Unlike API
+      if (!item.likeId) {
+        console.error("Cannot unlike: missing likeId");
+        return;
+      }
+
+      res = await fetch(`http://localhost:8080/feed/like/${item.likeId}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      data = await res.json();
+
+      if (res.ok) {
+        item.isLiked = false;
+        item.likeId = null;
+      }
+    }
+
+    if (!res?.ok && !data?.data?.likeId) {
+      toast.error(data?.message || "Failed to update like.");
+      return;
+    }
+
+    toast.success(data?.message || "Action successful!");
+    onItemUpdate({ ...item });
+  } catch (err) {
+    console.error("LIKE ERROR:", err);
+    toast.error("Something went wrong.");
+  }
+};
+
+
+
+
+
+  // const handleLike = async () => {
+  //   if (!token) return;
+  //   try {
+  //     if (!item.isLiked) {
+  //       await fetch("http://localhost:8080/feed/like", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           targetId: item.id,
+  //           targetType: item.type,
+  //         }),
+  //       });
+  //     } else {
+  //       await fetch(`http://localhost:8080/feed/unlike`, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           targetId: item.id,
+  //           targetType: item.type,
+  //         }),
+  //       });
+  //     }
+  //   } catch {}
+  // };
+
+ const handleShare = async (
+  platform: "instagram" | "facebook" | "whatsapp" | "twitter"
+) => {
+  if (!token) return;
+  if (item.isShare?.includes(platform)) return;
+
+  // Construct the URL/text to share
+  const mediaUrl = item.type === "ANIMATION" ? item.video_url : item.url;
+  const postTitle = encodeURIComponent( item.type === "ANIMATION" ? item.title : item.caption);
+  const shareLink = encodeURIComponent(mediaUrl);
+  if (!mediaUrl) return alert("Media not available for sharing");
+
+  try {
+    // Call your backend to record the share
+    const res = await fetch("http://localhost:8080/feed/share", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "*/*",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        targetId: item.id,
+        targetType: item.type,
+        platform,
+      }),
+    });
+
+    if (!res.ok) throw new Error("Failed to share");
+
+    // Update Redux/Local state
+onItemUpdate({
+  ...item,
+  shareCount: (item.shareCount || 0) + 1,   // increment the count
+  isShare: [...(item.isShare || []), platform],
+});
+
+    // Open the social app/web share
+    switch (platform) {
+      case "facebook":
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareLink}`, "_blank");
+        break;
+
+      case "twitter":
+        window.open(`https://twitter.com/intent/tweet?url=${shareLink}&text=${postTitle}`, "_blank");
+        break;
+
+      case "whatsapp":
+        window.open(`https://api.whatsapp.com/send?text=${postTitle}%20${shareLink}`, "_blank");
+        break;
+
+      case "instagram":
+        alert("Instagram sharing must be done manually from the app."); // Instagram doesn't support URL sharing
+        break;
+
+      default:
+        console.error("Unsupported platform");
+    }
+  } catch (err) {
+    console.error("Error sharing post:", err);
+  }
+};
+
+
+
+
+  const handleFollow = async () => {
+    if (!token) return;
+    setFollowLoadingId(item.user.id);
+    try {
+      await fetch("http://localhost:8080/feed/follow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ followingId: item.user.id }),
+      });
+      const updatedItem = {
+        ...item,
+        user: { ...item.user, isFollowing: true },
+      };
+      onItemUpdate(updatedItem);
+    } finally {
+      setFollowLoadingId(null);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!token) return;
+    setFollowLoadingId(item.user.id);
+    try {
+      await fetch(`http://localhost:8080/feed/unfollow/${item.user.id}`, {
+        method: "DELETE",
+        headers: {
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const updatedItem = {
+        ...item,
+        user: { ...item.user, isFollowing: false },
+      };
+      onItemUpdate(updatedItem);
+    } finally {
+      setFollowLoadingId(null);
+    }
+  };
+
+  
+
+  return (
+  
+<Card className="overflow-hidden w-full max-w-full sm:max-w-md md:max-w-lg mx-auto">
+  {/* User Header */}
+  <CardHeader className="flex flex-row items-center justify-between py-3 sm:py-4 flex-wrap gap-2">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+        <AvatarImage src={item.user.profilePic || ""} alt="{item.user.name}" />
+        <AvatarFallback>
+            {/* {item.user.name[0]}  */}
+            {item.user?.name?.[0] ?? "?"}
+        </AvatarFallback>
+      </Avatar>
+      <Link href={`/profile/${item.user.id}`} className="hover:underline">
+                  <span className="font-medium text-sm sm:text-base truncate">{item.user.name}</span>
+          </Link>
+
+    </div>
+    {item.user.id !== localStorage.getItem("userId") &&
+      (item.user.isFollowing ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleUnfollow}
+          disabled={followLoadingId === item.user.id}
+          className="text-xs sm:text-sm"
+        >
+          {followLoadingId === item.user.id ? "..." : "Following"}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleFollow}
+          disabled={followLoadingId === item.user.id}
+          className="text-xs sm:text-sm"
+        >
+          {followLoadingId === item.user.id ? "..." : "Follow"}
+        </Button>
+      ))}
+  </CardHeader>
+
+  {/* Image */}
+  <div className="relative w-full h-40 xs:h-48 sm:h-60 md:h-80">
+    {item.type === "ANIMATION" ? (
+      <video src={item.video_url} controls className="w-full h-full object-cover" />
+    ) : (
+      <Image src={item.url} alt={item.caption} fill className="object-cover" unoptimized  />
+    )}
+  </div>
+
+  {/* Stats */}
+ <CardContent className="flex items-center gap-4 sm:gap-6 text-gray-600 text-xs sm:text-sm py-2 sm:py-3 flex-wrap border-t">
+  {/* Like */}
+  <span className="flex items-center gap-1">
+    <Heart
+      size={16}
+      fill={item.isLiked ? "currentColor" : "none"}
+      onClick={handleLike}
+      className={`cursor-pointer ${
+        item.isLiked ? "text-red-500" : "text-gray-400 hover:text-red-400"
+      }`}
+    />
+    {item.likesCount}
+  </span>
+
+  {/* Comment */}
+  <span className="flex items-center gap-1">
+    <MessageCircle
+      size={16}
+      onClick={() =>
+        openCommentsForId === item.id
+          ? setOpenCommentsForId(null)
+          : openComments(item.type, item.id)
+      }
+      className="cursor-pointer text-gray-400 hover:text-blue-500"
+    />
+    {item.commentsCount}
+  </span>
+
+  {/* Share */}
+<div className="flex items-center gap-2 relative">
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        className="p-2 rounded-full hover:bg-gray-200 transition-colors shadow-md"
+        aria-label="Share post"
+      >
+        <FaShare className="text-gray-700 w-4 h-4" />
+      </button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent
+      align="center"
+      className="bg-white rounded-2xl shadow-xl border border-gray-200 py-4 px-6 w-64 animate-dropdown-scale relative"
+    >
+      {/* Pointer triangle */}
+      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rotate-45 shadow-md border-t border-l border-gray-200"></div>
+
+      <DropdownMenuLabel className="text-gray-500 text-sm text-center mb-3">
+        Share to
+      </DropdownMenuLabel>
+
+      {/* Grid of platforms */}
+      <div className="grid grid-cols-3 gap-4 justify-items-center">
+        <button
+          onClick={() => handleShare("instagram")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-pink-50 transition"
+        >
+          <FaInstagram className="text-pink-500 w-6 h-6" />
+          <span className="text-xs text-gray-700">Instagram</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("facebook")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-blue-50 transition"
+        >
+          <FaFacebook className="text-blue-600 w-6 h-6" />
+          <span className="text-xs text-gray-700">Facebook</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("twitter")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-blue-100 transition"
+        >
+          <FaTwitter className="text-blue-400 w-6 h-6" />
+          <span className="text-xs text-gray-700">Twitter</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("whatsapp")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-green-50 transition"
+        >
+          <FaWhatsapp className="text-green-500 w-6 h-6" />
+          <span className="text-xs text-gray-700">WhatsApp</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const mediaUrl = item.type === "ANIMATION" ? item.video_url : item.url;
+            if (mediaUrl) {
+              navigator.clipboard.writeText(mediaUrl);
+              alert("Link copied to clipboard ✅");
+            }
+          }}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-gray-100 transition"
+        >
+          <FaShare className="text-gray-600 w-6 h-6" />
+          <span className="text-xs text-gray-700">Copy Link</span>
+        </button>
+      </div>
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+  {/* Share count badge */}
+  <span className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+    {item.shareCount || 0}
+  </span>
+
+  {/* Animation */}
+  <style jsx>{`
+    .animate-dropdown-scale {
+      transform-origin: top center;
+      animation: dropdown-scale 0.15s ease-out forwards;
+    }
+
+    @keyframes dropdown-scale {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  `}</style>
+</div>
+
+</CardContent>
+
+  {/* Caption */}
+  <CardFooter>
+    <p className="text-xs sm:text-sm break-words pb-6">
+      {item.type === "ANIMATION" ? item.title : item.caption}
+    </p>
+  </CardFooter>
+
+  {/* Inline Comments Section */}
+  {openCommentsForId === item.id && (
+    <CardContent className="px-3 sm:px-4 pb-4">
+      <div className="max-h-32 sm:max-h-40 overflow-y-auto mb-2 space-y-3">
+        {commentLoading ? (
+          <div className="text-center text-gray-400 text-sm">Loading...</div>
+        ) : (commentsMap[item.id]?.length ?? 0) === 0 ? (
+          <div className="text-center text-gray-400 text-sm">No comments yet.</div>
+        ) : (
+          commentsMap[item.id].map((c,index) => (
+            <div key={`${c.id}-${index}`} className="flex items-start gap-2">
+              <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                <AvatarImage src={c?.user?.profilePic || ""} />
+                <AvatarFallback>
+                     {c?.user?.name?.[0] || "?"}
+        
+                  </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <div className="font-semibold text-xs sm:text-sm truncate">
+                  <Link href={`/profile/${c.user.id}`} className="hover:underline">
+                    {c.user.name}
+                  </Link>
+                </div>
+                <div className="text-gray-700 text-xs sm:text-sm break-words">{c.text}</div>
+                <div className="text-xs text-gray-400">
+                  {new Date(c.created_at).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      {token && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            className="border border-gray-300 rounded-lg p-1 sm:p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
+            placeholder="Add a comment..."
+            disabled={commentLoading}
+          />
+          <Button
+            onClick={() => postComment(item.type, item.id)}
+            disabled={commentLoading || !commentText.trim()}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition"
+          >
+            Post
+          </Button>
+        </div>
+      )}
+      
+    </CardContent>
+  )}
+</Card>
+
+
+  );
+};
+
+export default PostCard;
+
+exports.unlikeItem = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  // Check if like exists and belongs to user
+  const like = await prisma.likes.findFirst({
+    where: {
+      id,
+      user_id: userId,
+      deleted_at: null
+    }
+  });
+
+  if (!like) {
+    throw new AppError('Like not found', 404, 'LIKE_NOT_FOUND');
+  }
+
+  // Soft delete like
+  await prisma.likes.update({
+    where: { id },
+    data: {
+      deleted_at: new Date(),
+      updated_by: userId
+    }
+  });
+
+  logger.info(`User ${userId} unliked ${like.target_type} ${like.target_id}`);
+  responses.ok(res, 'Item unliked successfully');
+});
+
+exports.likeItem = asyncHandler(async (req, res) => {
+  const { targetId, targetType } = req.body;
+  const userId = req.user.id;
+
+  if (!targetId || !targetType) {
+    throw new AppError('Target ID and type are required', 400, 'MISSING_REQUIRED_FIELDS');
+  }
+
+  if (!Object.values(TargetType).includes(targetType)) {
+    throw new AppError('Invalid target type', 400, 'INVALID_TARGET_TYPE');
+  }
+
+  // Check if already liked
+  const existingLike = await prisma.likes.findFirst({
+    where: {
+      user_id: userId,
+      target_id: targetId,
+      target_type: targetType,
+      deleted_at: null
+    }
+  });
+
+  if (existingLike) {
+   throw new AppError('Item already liked', 400, 'ALREADY_LIKED');
+  }
+
+  // Create like
+  const like = await prisma.likes.create({
+    data: {
+      user_id: userId,
+      target_id: targetId,
+      target_type: targetType,
+      created_by: userId
+    }
+  });
+
+  logger.info(`User ${userId} liked ${targetType} ${targetId}`);
+  responses.created(res, 'Item liked successfully', { likeId: like.id });
+});
+
+const openComments = async (type: string, id: string) => {
+  if (!token) return;
+  setOpenCommentsForId(id);
+  setCommentLoading(true);
+
+  try {
+    const res = await fetch(
+      `http://localhost:8080/feed/comments/${type}/${id}?page=1&limit=10`,
+      {
+        headers: {
+          accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      setCommentsMap((prev) => ({ ...prev, [id]: data.data || [] }));
+    } else if (data?.error?.code === "TOKEN_EXPIRED") {
+      toast.error("Session expired. Please login again.");
+    } else {
+      toast.error(data?.message || "Failed to load comments");
+      setCommentsMap((prev) => ({ ...prev, [id]: [] }));
+    }
+  } catch (err) {
+    console.error("OPEN COMMENTS ERROR:", err);
+    setCommentsMap((prev) => ({ ...prev, [id]: [] }));
+  }
+
+  setCommentLoading(false);
+};
+
+
+const postComment = async (type: string, id: string) => {
+  if (!token || !commentText.trim()) return;
+  setCommentLoading(true);
+
+  try {
+    const res = await fetch("http://localhost:8080/feed/comment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        target_id: id,
+        target_type: type,
+        content: commentText,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      const newComment = data.data;
+      setCommentsMap((prev) => ({
+        ...prev,
+        [id]: [newComment, ...(prev[id] || [])],
+      }));
+      setCommentText("");
+      const updatedItem = { ...item, commentsCount: item.commentsCount + 1 };
+      onItemUpdate(updatedItem);
+      toast.success(data.message || "Comment added successfully");
+    } else if (data?.error?.code === "TOKEN_EXPIRED") {
+      toast.error("Session expired. Please login again.");
+    } else {
+      toast.error(data?.message || "Failed to add comment");
+    }
+  } catch (err) {
+    console.error("POST COMMENT ERROR:", err);
+  }
+
+  setCommentLoading(false);
+};
+
+
+
+my new postCard .....
+// components/PostCard.tsx
+"use client";
+
+import React, { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useSearchParams ,useRouter} from "next/navigation";
+import { io, Socket } from "socket.io-client";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { FaShare } from "react-icons/fa";
+import { DropdownMenu , DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger, } from "./dropdown-menu";
+import { FaFacebook, FaInstagram, FaTwitter, FaWhatsapp } from "react-icons/fa";
+import { SmartImage } from "./SmartImage";
+import { } from "@/redux/slices/photoSlice";
+import toast from "react-hot-toast";
+import { useSocket } from "@/contexts/SocketContext";
+
+
+
+
+type User = {
+  id: string;
+  name: string;
+  profilePic: string | null;
+  isFollowing?: boolean;
+};
+
+type AnimationFeed = {
+  type: "ANIMATION";
+  id: string;
+  title: string;
+  video_url: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?: string[];
+  likeId?: string | null;
+};
+
+type PhotoFeed = {
+  type: "PHOTO";
+  id: string;
+  url: string;
+  caption: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?: string[];
+  likeId?: string | null;
+};
+
+type FeedItem = AnimationFeed | PhotoFeed;
+
+type Comment = {
+  id: string;
+  text: string;
+  user: User;
+  created_at: string;
+};
+
+
+
+
+const PostCard = ({ item, onItemUpdate }: { item: FeedItem; onItemUpdate: (updatedItem: FeedItem) => void }) => {
+  const searchParams = useSearchParams();
+   const userId = searchParams.get("userId");
+    const { socket } = useSocket(); 
+   const likeInProgress = useRef(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [openCommentsForId, setOpenCommentsForId] = useState<string | null>(null);
+  const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
+  const [commentText, setCommentText] = useState("");
+  const [commentLoading, setCommentLoading] = useState(false);
+  const [followLoadingId, setFollowLoadingId] = useState<string | null>(null);
+  
+   const router = useRouter(); 
+useEffect(() => {
+  const t = localStorage.getItem("token");
+    setToken(t);
+    if (!t) {
+       router.push("/login");
+      return;
+    }
+}, []);
+
+
+useEffect(() => {
+  if (!socket) return;
+
+  // Handle like updates
+  const handleLikeUpdate = (data: any) => {
+    if (item.id !== data.targetId) return;
+
+    const isCurrentUser = data.userId === userId;
+
+    const updatedItem: FeedItem = {
+      ...item,
+      likesCount:
+        data.action === "LIKE"
+          ? item.likesCount + 1
+          : data.action === "UNLIKE"
+          ? Math.max(0, item.likesCount - 1)
+          : item.likesCount,
+      isLiked: isCurrentUser
+        ? data.action === "LIKE"
+          ? true
+          : false
+        : item.isLiked,
+      likeId: isCurrentUser
+        ? data.action === "LIKE"
+          ? data.likeId // backend must send this
+          : null
+        : item.likeId,
+    };
+
+    onItemUpdate(updatedItem);
+  };
+
+  // Handle share updates
+  const handleShareUpdate = (data: any) => {
+    if (item.id !== data.targetId) return;
+
+    const updatedItem: FeedItem = {
+      ...item,
+      shareCount: (item.shareCount || 0) + 1,
+      isShare:
+        data.userId === localStorage.getItem("userId")
+          ? [...(item.isShare || []), data.platform]
+          : item.isShare,
+    };
+
+    onItemUpdate(updatedItem);
+  };
+
+  // Handle comment updates
+  const handleCommentUpdate = (data: any) => {
+    if (item.id !== data.targetId || data.action !== "ADD") return;
+
+    setCommentsMap((prev) => ({
+      ...prev,
+      [data.targetId]: [data.comment, ...(prev[data.targetId] || [])],
+    }));
+
+    const updatedItem = { ...item, commentsCount: item.commentsCount + 1 };
+    onItemUpdate(updatedItem);
+  };
+
+  // ✅ Register listeners
+  socket.on("likeUpdate", handleLikeUpdate);
+  socket.on("shareUpdate", handleShareUpdate);
+  socket.on("commentUpdate", handleCommentUpdate);
+
+  // ✅ Cleanup listeners
+  return () => {
+    socket.off("likeUpdate", handleLikeUpdate);
+    socket.off("shareUpdate", handleShareUpdate);
+    socket.off("commentUpdate", handleCommentUpdate);
+  };
+}, [socket, item, onItemUpdate]);
+
+
+  useEffect(() => {
+    if (!socket) return;
+    socket.emit("subscribeToTarget", item.id);
+  }, [socket, item.id]);
+
+  const openComments = async (type: string, id: string) => {
+    if (!token) return;
+    setOpenCommentsForId(id);
+    setCommentLoading(true);
+    try {
+      const res = await fetch(
+        `http://localhost:8080/feed/comments/${type}/${id}?page=1&limit=10`,
+        {
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const data = await res.json();
+      setCommentsMap((prev) => ({ ...prev, [id]: data.data || [] }));
+    } catch {
+      setCommentsMap((prev) => ({ ...prev, [id]: [] }));
+    }
+    setCommentLoading(false);
+  };
+
+
+  const postComment = async (type: string, id: string) => {
+    if (!token || !commentText.trim()) return;
+    setCommentLoading(true);
+    try {
+      const res = await fetch("http://localhost:8080/feed/comment", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetId: item.id,
+          targetType: item.type,
+          text: commentText,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.data) {
+        setCommentsMap((prev) => ({
+          ...prev,
+          [item.id]: [data.data, ...(prev[item.id] || [])],
+        }));
+        setCommentText("");
+        const updatedItem = { ...item, commentsCount: item.commentsCount + 1 };
+        onItemUpdate(updatedItem);
+      }
+    } catch {}
+    setCommentLoading(false);
+  };
+
+
+
+
+const handleLike = async () => {
+  if (likeInProgress.current) return; // prevent multiple requests
+  likeInProgress.current = true;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    toast.error("You must be logged in to like/unlike.");
+    likeInProgress.current = false;
+    return;
+  }
+
+  try {
+    if (!item.isLiked) {
+      // Like
+      const res = await fetch("http://localhost:8080/feed/like", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetId: item.id,
+          targetType: item.type.toUpperCase(),
+        }),
+      });
+
+      const data = await res.json();
+     console.log(res)
+      if (res.ok && data.success) {
+        item.isLiked = true;
+        item.likeId = data?.data?.likeId || null;
+        item.likesCount += 1;
+        toast.success(data?.message || "Item liked successfully");
+      } else if (data?.error?.code === "CONFLICT") {
+        // Already liked
+        item.isLiked = true;
+        toast("You already liked this content");
+      } else if (data?.error?.code === "TOKEN_EXPIRED") {
+        toast.error("Session expired. Please login again.");
+      } else {
+        toast.error(data?.message || "Failed to like item");
+      }
+    } else {
+      // Unlike
+      if (!item.likeId) {
+        toast.error("Cannot unlike: missing likeId");
+        likeInProgress.current = false;
+        return;
+      }
+
+      const res = await fetch(`http://localhost:8080/feed/like/${item.likeId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        item.isLiked = false;
+        item.likeId = null;
+        item.likesCount = Math.max(0, item.likesCount - 1);
+        toast.success(data?.message || "Item unliked successfully");
+      } else if (res.status === 404 || data?.error?.code === "NOT_FOUND") {
+        toast.error("Like not found. It may have been removed already.");
+        data.isLiked = false;
+        data.likeId = null;
+      } else if (data?.error?.code === "TOKEN_EXPIRED") {
+        toast.error("Session expired. Please login again.");
+      } else {
+        toast.error(data?.message || "Failed to unlike item");
+      }
+    }
+
+    onItemUpdate({ ...item });
+  } catch (err) {
+    console.error("LIKE ERROR:", err);
+    toast.error("Something went wrong. Please try again.");
+  } finally {
+    likeInProgress.current = false;
+  }
+};
+
+
+
+
+
+
+  // const handleLike = async () => {
+  //   if (!token) return;
+  //   try {
+  //     if (!item.isLiked) {
+  //       await fetch("http://localhost:8080/feed/like", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           targetId: item.id,
+  //           targetType: item.type,
+  //         }),
+  //       });
+  //     } else {
+  //       await fetch(`http://localhost:8080/feed/${item.id}`, {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Accept: "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           targetId: item.id,
+  //           targetType: item.type,
+  //         }),
+  //       });
+  //     }
+  //   } catch {}
+  // };
+
+ const handleShare = async (
+  platform: "instagram" | "facebook" | "whatsapp" | "twitter"
+) => {
+  if (!token) return;
+  if (item.isShare?.includes(platform)) return;
+
+  // Construct the URL/text to share
+  const mediaUrl = item.type === "ANIMATION" ? item.video_url : item.url;
+  const postTitle = encodeURIComponent( item.type === "ANIMATION" ? item.title : item.caption);
+  const shareLink = encodeURIComponent(mediaUrl);
+  if (!mediaUrl) return alert("Media not available for sharing");
+
+  try {
+    // Call your backend to record the share
+    const res = await fetch("http://localhost:8080/feed/share", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+         accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        targetId: item.id,                 // ✅ match backend
+  targetType: item.type.toUpperCase(), // ✅ PHOTO / ANIMATION
+  platform: platform.toUpperCase(), 
+      }),
+    });
+   console.log(res)
+    if (!res.ok) throw new Error("Failed to share");
+
+    // Update Redux/Local state
+onItemUpdate({
+  ...item,
+  shareCount: (item.shareCount || 0) + 1,   // increment the count
+  isShare: [...(item.isShare || []), platform],
+});
+
+    // Open the social app/web share
+    switch (platform) {
+      case "facebook":
+        window.open(`https://www.facebook.com/sharer/sharer.php?u=${shareLink}`, "_blank");
+        break;
+
+      case "twitter":
+        window.open(`https://twitter.com/intent/tweet?url=${shareLink}&text=${postTitle}`, "_blank");
+        break;
+
+      case "whatsapp":
+        window.open(`https://api.whatsapp.com/send?text=${postTitle}%20${shareLink}`, "_blank");
+        break;
+
+      case "instagram":
+        alert("Instagram sharing must be done manually from the app."); // Instagram doesn't support URL sharing
+        break;
+
+      default:
+        console.error("Unsupported platform");
+    }
+  } catch (err) {
+    console.error("Error sharing post:", err);
+  }
+};
+
+const handleFollow = async () => {
+  if (!token) return;
+  setFollowLoadingId(item.user.id);
+
+  try {
+    const res = await fetch("http://localhost:8080/feed/follow", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json", // use application/json instead of */*
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ followingId: item.user.id }),
+    });
+    console.log(res)
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      const updatedItem = {
+        ...item,
+        user: { ...item.user, isFollowing: true },
+      };
+      onItemUpdate(updatedItem);
+    } else {
+      console.error("Follow failed:", data);
+      toast.error(data.message || "Failed to follow user");
+    }
+  } catch (err) {
+    console.error("Follow error:", err);
+    toast.error("Something went wrong");
+  } finally {
+    setFollowLoadingId(null);
+  }
+};
+
+const handleUnfollow = async () => {
+  if (!token) return;
+  setFollowLoadingId(item.user.id);
+
+  try {
+    const res = await fetch(`http://localhost:8080/feed/unfollow/${item.user.id}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  console.log(res)
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      const updatedItem = {
+        ...item,
+        user: { ...item.user, isFollowing: false },
+      };
+      onItemUpdate(updatedItem);
+    } else {
+      console.error("Unfollow failed:", data);
+      toast.error(data.message || "Failed to unfollow user");
+    }
+  } catch (err) {
+    console.error("Unfollow error:", err);
+    toast.error("Something went wrong");
+  } finally {
+    setFollowLoadingId(null);
+  }
+};
+
+
+
+  // const handleFollow = async () => {
+  //   if (!token) return;
+  //   setFollowLoadingId(item.user.id);
+  //   try {
+  //     await fetch("http://localhost:8080/feed/follow", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         accept: "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ followingId: item.user.id }),
+  //     });
+  //     const updatedItem = {
+  //       ...item,
+  //       user: { ...item.user, isFollowing: true },
+  //     };
+  //     onItemUpdate(updatedItem);
+  //   } finally {
+  //     setFollowLoadingId(null);
+  //   }
+  // };
+
+  // const handleUnfollow = async () => {
+  //   if (!token) return;
+  //   setFollowLoadingId(item.user.id);
+  //   try {
+  //     await fetch(`http://localhost:8080/feed/unfollow/${item.user.id}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //          accept: "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+   
+  //     const updatedItem = {
+  //       ...item,
+  //       user: { ...item.user, isFollowing: false },
+  //     };
+  //     onItemUpdate(updatedItem);
+  //   } finally {
+  //     setFollowLoadingId(null);
+  //   }
+  // };
+
+  
+
+  return (
+  
+<Card className="overflow-hidden w-full max-w-full sm:max-w-md md:max-w-lg mx-auto">
+  {/* User Header */}
+  <CardHeader className="flex flex-row items-center justify-between py-3 sm:py-4 flex-wrap gap-2">
+    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+      <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
+        <AvatarImage src={item.user.profilePic || ""} alt="{item.user.name}" />
+        <AvatarFallback>
+            {/* {item.user.name[0]}  */}
+            {item.user?.name?.[0] ?? "?"}
+        </AvatarFallback>
+      </Avatar>
+      <Link href={`/profile/${item.user.id}`} className="hover:underline">
+                  <span className="font-medium text-sm sm:text-base truncate">{item.user.name}</span>
+          </Link>
+
+    </div>
+    {item.user.id !== localStorage.getItem("userId") &&
+      (item.user.isFollowing ? (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={handleUnfollow}
+          disabled={followLoadingId === item.user.id}
+          className="text-xs sm:text-sm"
+        >
+          {followLoadingId === item.user.id ? "..." : "Following"}
+        </Button>
+      ) : (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleFollow}
+          disabled={followLoadingId === item.user.id}
+          className="text-xs sm:text-sm"
+        >
+          {followLoadingId === item.user.id ? "..." : "Follow"}
+        </Button>
+      ))}
+  </CardHeader>
+
+  {/* Image */}
+  <div className="relative w-full h-40 xs:h-48 sm:h-60 md:h-80">
+    {item.type === "ANIMATION" ? (
+      <video src={item.video_url} controls className="w-full h-full object-cover" />
+    ) : (
+      <Image src={item.url} alt={item.caption} fill className="object-cover" unoptimized  />
+    )}
+  </div>
+
+  {/* Stats */}
+ <CardContent className="flex items-center gap-4 sm:gap-6 text-gray-600 text-xs sm:text-sm py-2 sm:py-3 flex-wrap border-t">
+  {/* Like */}
+  <span className="flex items-center gap-1">
+    <Heart
+      size={16}
+      fill={item.isLiked ? "currentColor" : "none"}
+      onClick={handleLike}
+      className={`cursor-pointer ${
+        item.isLiked ? "text-red-500" : "text-gray-400 hover:text-red-400"
+      }`}
+    />
+    {item.likesCount}
+  </span>
+
+  {/* Comment */}
+  <span className="flex items-center gap-1">
+    <MessageCircle
+      size={16}
+      onClick={() =>
+        openCommentsForId === item.id
+          ? setOpenCommentsForId(null)
+          : openComments(item.type, item.id)
+      }
+      className="cursor-pointer text-gray-400 hover:text-blue-500"
+    />
+    {item.commentsCount}
+  </span>
+
+  {/* Share */}
+<div className="flex items-center gap-2 relative">
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <button
+        className="p-2 rounded-full hover:bg-gray-200 transition-colors shadow-md"
+        aria-label="Share post"
+      >
+        <FaShare className="text-gray-700 w-4 h-4" />
+      </button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent
+      align="center"
+      className="bg-white rounded-2xl shadow-xl border border-gray-200 py-4 px-6 w-64 animate-dropdown-scale relative"
+    >
+      {/* Pointer triangle */}
+      <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 w-3 h-3 bg-white rotate-45 shadow-md border-t border-l border-gray-200"></div>
+
+      <DropdownMenuLabel className="text-gray-500 text-sm text-center mb-3">
+        Share to
+      </DropdownMenuLabel>
+
+      {/* Grid of platforms */}
+      <div className="grid grid-cols-3 gap-4 justify-items-center">
+        <button
+          onClick={() => handleShare("instagram")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-pink-50 transition"
+        >
+          <FaInstagram className="text-pink-500 w-6 h-6" />
+          <span className="text-xs text-gray-700">Instagram</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("facebook")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-blue-50 transition"
+        >
+          <FaFacebook className="text-blue-600 w-6 h-6" />
+          <span className="text-xs text-gray-700">Facebook</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("twitter")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-blue-100 transition"
+        >
+          <FaTwitter className="text-blue-400 w-6 h-6" />
+          <span className="text-xs text-gray-700">Twitter</span>
+        </button>
+
+        <button
+          onClick={() => handleShare("whatsapp")}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-green-50 transition"
+        >
+          <FaWhatsapp className="text-green-500 w-6 h-6" />
+          <span className="text-xs text-gray-700">WhatsApp</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const mediaUrl = item.type === "ANIMATION" ? item.video_url : item.url;
+            if (mediaUrl) {
+              navigator.clipboard.writeText(mediaUrl);
+              alert("Link copied to clipboard ✅");
+            }
+          }}
+          className="flex flex-col items-center gap-1 p-3 rounded-full hover:bg-gray-100 transition"
+        >
+          <FaShare className="text-gray-600 w-6 h-6" />
+          <span className="text-xs text-gray-700">Copy Link</span>
+        </button>
+      </div>
+    </DropdownMenuContent>
+  </DropdownMenu>
+
+  {/* Share count badge */}
+  <span className="bg-gray-100 text-gray-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+    {item.shareCount || 0}
+  </span>
+
+  {/* Animation */}
+  <style jsx>{`
+    .animate-dropdown-scale {
+      transform-origin: top center;
+      animation: dropdown-scale 0.15s ease-out forwards;
+    }
+
+    @keyframes dropdown-scale {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  `}</style>
+</div>
+
+</CardContent>
+
+  {/* Caption */}
+  <CardFooter>
+    <p className="text-xs sm:text-sm break-words pb-6">
+      {item.type === "ANIMATION" ? item.title : item.caption}
+    </p>
+  </CardFooter>
+
+  {/* Inline Comments Section */}
+  {openCommentsForId === item.id && (
+    <CardContent className="px-3 sm:px-4 pb-4">
+      <div className="max-h-32 sm:max-h-40 overflow-y-auto mb-2 space-y-3">
+        {commentLoading ? (
+          <div className="text-center text-gray-400 text-sm">Loading...</div>
+        ) : (commentsMap[item.id]?.length ?? 0) === 0 ? (
+          <div className="text-center text-gray-400 text-sm">No comments yet.</div>
+        ) : (
+          commentsMap[item.id].map((c,index) => (
+            <div key={`${c.id}-${index}`} className="flex items-start gap-2">
+              <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
+                <AvatarImage src={c?.user?.profilePic || ""} />
+                <AvatarFallback>
+                     {c?.user?.name?.[0] || "?"}
+        
+                  </AvatarFallback>
+              </Avatar>
+              <div className="min-w-0">
+                <div className="font-semibold text-xs sm:text-sm truncate">
+                  <Link href={`/profile/${c.user.id}`} className="hover:underline">
+                    {c.user.name}
+                  </Link>
+                </div>
+                <div className="text-gray-700 text-xs sm:text-sm break-words">{c.text}</div>
+                <div className="text-xs text-gray-400">
+                  {new Date(c.created_at).toLocaleString()}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      {token && (
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            className="border border-gray-300 rounded-lg p-1 sm:p-2 flex-1 focus:outline-none focus:ring-2 focus:ring-blue-400 text-xs sm:text-sm"
+            placeholder="Add a comment..."
+            disabled={commentLoading}
+          />
+          <Button
+            onClick={() => postComment(item.type, item.id)}
+            disabled={commentLoading || !commentText.trim()}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition"
+          >
+            Post
+          </Button>
+        </div>
+      )}
+      
+    </CardContent>
+  )}
+</Card>
+
+
+  );
+};
+
+export default PostCard;
+
+
+
+this is original feedPage...
+// app/page.tsx
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import PostCard from "@/components/ui/PostCard";
+import Header from "@/components/Header";
+import Footer from "@/components/ui/Footer";
+import { Card  } from "@/components/ui/card";
+import { useRouter } from "next/navigation"; 
+import { Skeleton } from "@/components/ui/skeleton";
+
+
+type User = {
+  id: string;
+  name: string;
+  profilePic: string | null;
+  isFollowing?: boolean;
+};
+
+type AnimationFeed = {
+  type: "ANIMATION";
+  id: string;
+  title: string;
+  video_url: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?:string[];
+};
+
+type PhotoFeed = {
+  type: "PHOTO";
+  id: string;
+  url: string;
+  caption: string;
+  user: User;
+  likesCount: number;
+  shareCount: number;
+  commentsCount: number;
+  isLiked: boolean;
+  isShare?:string[];
+};
+
+type FeedItem = AnimationFeed | PhotoFeed;
+
+type Comment = {
+  id: string;
+  text: string;
+  user: User;
+  created_at: string;
+};
+
+const FeedPage = () => {
+  const [feed, setFeed] = useState<FeedItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const router = useRouter(); 
+
+  useEffect(() => {
+  
+    const t = localStorage.getItem("token");
+    setToken(t);
+    if (!t) {
+       router.push("/login");
+      return;
+    }
+    const fetchFeed = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await fetch("http://localhost:8080/feed?page=1&limit=10", {
+          headers: {
+             accept: "application/json",
+            Authorization: `Bearer ${t}`,
+          },
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setFeed(data.data || []);
+        } else {
+          setError(data.message || "Failed to fetch feed");
+        }
+      } catch (err) {
+        setError("Network error");
+      }
+      setLoading(false);
+    };
+    fetchFeed();
+  
+}, []);
+
+  const handleItemUpdate = (updatedItem: FeedItem) => {
+    setFeed((prev) =>
+      prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+  );
+  };
+   
+
+ 
+ 
+
+  return (
+    
+
+
+<div className="flex items-center justify-center min-h-screen bg-gradient-to-br bg-green-50 px-2 sm:px-4">
+  <Card className="w-full max-w-xl mt-6 shadow-lg rounded-2xl border bg-green-100">
+    <Header />
+    <main className="w-full max-w-xl mx-auto pt-3 pb-3  sm:px-0">
+      {loading && (
+         <div className="p-6 space-y-6">
+        {/* Header skeleton */}
+        <div className="flex items-center space-x-4">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-2 flex-1">
+            <Skeleton className="h-4 w-1/2" />
+            <Skeleton className="h-4 w-1/3" />
+          </div>
+        </div>
+
+        {/* Image skeleton */}
+        <Skeleton className="h-48 w-full rounded-lg" />
+
+        {/* Text skeleton */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-2/3" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </div>
+      )}
+      {/* {error && (
+        <div className="text-center text-red-500 mt-8">
+          {error}
+          {!token && (
+            <div className="mt-4">
+              <Link
+                href="/login"
+                className="bg-blue-500 text-white px-4 py-2 rounded-full font-medium text-sm hover:bg-blue-600 transition"
+              >
+                Go to Login
+              </Link>
+            </div>
+          )}
+        </div>
+      )} */}
+      {!loading && !error && feed.length === 0 && (
+        <div className="text-center text-gray-500 mt-8">No posts found.</div>
+      )}
+      <div className="flex flex-col gap-4 ml-2 mr-2">
+        {feed && feed?.map((item) => (
+          <PostCard
+            key={item.id}
+            item={item}
+            onItemUpdate={handleItemUpdate}
+            />
+        ))}
+      </div>
+    </main>
+    <Footer />
+  </Card>
+</div>
+
+
+  );
+};
+
+export default FeedPage;
+
+
+
+this is my original profilePage
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Image from "next/image";
+import Link, { useRouter, useParams } from "next/navigation";
+import Footer from "@/components/ui/Footer";
+import { SmartImage } from "@/components/ui/SmartImage";
+import { Skeleton } from "@/components/ui/skeleton";
+import EditProfileForm from "@/components/EditProfile";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
+import {fetchUserProfileById} from '@/redux/thunk/userThunk'
+import {followUser , unfollowUser} from '@/redux/thunk/feedThunk'
+
+type HomeLocation = {
+  id: string;
+  continent: string;
+  country: string;
+  state: string;
+  city: string;
+  area: string;
+  lat: number;
+  lng: number;
+};
+
+type Photo = {
+  id: string;
+  url: string;
+};
+
+type Profile = {
+  id: string;
+  name: string;
+  profilePic: string | null;
+  bio: string;
+  email: string;
+  homeLocation: HomeLocation;
+  posts: number;
+  followers: number;
+  following: number;
+  totalDistanceKm: number;
+  daysSpentTraveling: number;
+  photos: Photo[];
+  isFollowing?: boolean;
+};
+
+const ProfilePage = () => {
+  const params = useParams();
+  const router = useRouter();
+  const userId = params?.userId as string | undefined;
+  // const [profile, setProfile] = useState<Profile | null>(null);
+  // const [loading, setLoading] = useState(true);
+  // const [error, setError] = useState("");
+  const [followLoading, setFollowLoading] = useState(false);
+   const dispatch = useDispatch<AppDispatch>();
+  const { profile, loading, error } = useSelector((state: RootState) => state.user);
+  const loggedInUserId =
+    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  useEffect(() => {
+    if (!token) {
+      router.push("/login");
+    }
+  }, [token, router]);
+
+  useEffect(() => {
+    if (userId) dispatch(fetchUserProfileById(userId));
+  }, [userId, dispatch]);
+  const handleFollow = async () => {
+    if (!token || !profile) return;
+    setFollowLoading(true);
+    try {
+      await fetch("http://localhost:8080/feed/follow", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ followingId: profile.id }),
+      });
+      setProfile({ ...profile, isFollowing: true });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!token || !profile) return;
+    setFollowLoading(true);
+    try {
+      await fetch(`http://localhost:8080/feed/unfollow/${profile.id}`, {
+        method: "DELETE",
+        headers: {
+          accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setProfile({ ...profile, isFollowing: false });
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-md mx-auto min-h-screen bg-white pb-8">
+        {/* Header skeleton */}
+        <div className="relative">
+          <div className="h-44 bg-gradient-to-b from-gray-200 to-gray-100 rounded-b-3xl animate-pulse"></div>
+          <div className="absolute left-1/2 -translate-x-1/2 top-24 z-10">
+            <Skeleton className="w-24 h-24 rounded-full border-4 border-white shadow-lg" />
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="mt-20 flex flex-col items-center px-4">
+          <div className="flex gap-8 mb-2">
+            <Skeleton className="w-10 h-5 rounded" />
+            <Skeleton className="w-10 h-5 rounded" />
+            <Skeleton className="w-10 h-5 rounded" />
+          </div>
+
+          {/* Name + bio */}
+          <Skeleton className="w-32 h-6 rounded mt-2" />
+          <Skeleton className="w-48 h-4 rounded mt-2" />
+
+          {/* Buttons */}
+          <div className="grid grid-cols-2 gap-3 mt-4 w-full max-w-xs">
+            <Skeleton className="h-9 rounded-full" />
+            <Skeleton className="h-9 rounded-full" />
+          </div>
+        </div>
+
+        {/* Travel stats */}
+        <div className="flex gap-3 justify-center mt-6 mb-6 px-4">
+          <Skeleton className="flex-1 h-16 rounded-xl" />
+          <Skeleton className="flex-1 h-16 rounded-xl" />
+        </div>
+
+        {/* Photos grid */}
+        <div className="mt-6 px-4">
+          <Skeleton className="w-40 h-5 mx-auto mb-4 rounded" />
+          <div className="grid grid-cols-3 gap-3">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="aspect-square rounded-xl" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-red-500">
+        {error || "Profile not found."}
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-md mx-auto min-h-screen bg-white pb-8">
+      {/* Header background */}
+      <div className="relative">
+        <div className="h-44 bg-gradient-to-b from-[#D0F5E4] to-[#F0FFF5] rounded-b-3xl"></div>
+        {/* Back button */}
+        <button
+          className="absolute left-4 top-7 text-gray-500 hover:text-gray-700 z-10"
+          onClick={() => router.back()}
+        >
+          <svg
+            width={28}
+            height={28}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+        </button>
+        {/* Avatar */}
+        <div className="absolute left-1/2 -translate-x-1/2 top-24 z-10">
+          <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden border-4 border-white shadow-lg">
+            {profile.profilePic ? (
+              <Image
+                src={profile.profilePic}
+                alt={profile.name}
+                width={96}
+                height={96}
+                className="object-cover"
+              />
+            ) : (
+              <span className="text-4xl text-gray-400 font-bold">
+                {profile?.name?.[0] || "?"}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="relative p-6">
+        <Dialog>
+          {/* ✅ Trigger button */}
+          <DialogTrigger asChild>
+            <Button variant={"outline"} className="absolute right-4 top-7">
+              Edit Profile
+            </Button>
+          </DialogTrigger>
+
+          {/* ✅ Modal Content */}
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Edit Profile</DialogTitle>
+            </DialogHeader>
+            <EditProfileForm />
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Card with stats, name, bio, buttons */}
+      <div className="mt-20 flex flex-col items-center px-4">
+        {/* Stats */}
+        <div className="flex gap-8 mb-2">
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-lg">
+              {profile.posts.toString().padStart(2, "0")}
+            </span>
+            <span className="text-xs text-gray-500">Posts</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-lg">
+              {profile.followers.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-500">Followers</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-lg">
+              {profile.following.toLocaleString()}
+            </span>
+            <span className="text-xs text-gray-500">Following</span>
+          </div>
+        </div>
+        {/* Name and bio */}
+        <div className="font-semibold text-xl mt-1">{profile.name}</div>
+        <div className="text-gray-500 text-sm text-center mt-1">
+          {profile.bio}
+        </div>
+
+        {/* Buttons */}
+        {profile.id !== loggedInUserId && (
+          <div className="grid grid-cols-2 gap-3 mt-4 w-full max-w-xs">
+            {profile.isFollowing ? (
+              <button
+                className="bg-green-600 text-white py-2 text-sm w-full rounded-full font-semibold shadow hover:bg-green-700 transition"
+                onClick={handleUnfollow}
+                disabled={followLoading}
+              >
+                {followLoading ? "..." : "Following"}
+              </button>
+            ) : (
+              <button
+                className="bg-green-600 text-white py-2 w-full rounded-full font-semibold text-sm shadow hover:bg-green-700 transition"
+                onClick={handleFollow}
+                disabled={followLoading}
+              >
+                {followLoading ? "..." : "Follow"}
+              </button>
+            )}
+            <button
+              className="bg-white border border-green-600 text-green-600 py-2w-full rounded-full font-semibold text-sm shadow hover:bg-green-50 transition"
+              disabled
+            >
+              Send Message
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Travel Stats */}
+      <div className="flex gap-3 justify-center mt-6 mb-6 px-4">
+        <div className="flex-1 bg-[#FFF4CC] rounded-xl py-4 flex flex-col items-center shadow">
+          <span className="font-bold text-lg">{profile.totalDistanceKm}KM</span>
+          <span className="text-xs text-gray-600">Total Distance Traveled</span>
+        </div>
+        <div className="flex-1 bg-[#FFF4CC] rounded-xl py-4 flex flex-col items-center shadow">
+          <span className="font-bold text-lg">
+            {profile.daysSpentTraveling}
+          </span>
+          <span className="text-xs text-gray-600">Days Spent Traveling</span>
+        </div>
+      </div>
+
+      {/* Section Title */}
+      <div className="mt-6 px-4">
+        <h3 className="text-base font-semibold mb-3 text-gray-700 text-center border-b border-gray-200 pb-2">
+          All Published Recaps & Photos
+        </h3>
+        <div className="grid grid-cols-3 gap-3">
+          {profile.photos.map((photo) => (
+            <div
+              key={photo.id}
+              className="aspect-square bg-gray-100 rounded-xl overflow-hidden p-1"
+            >
+              <SmartImage
+                src={photo.url}
+                alt="User photo"
+                width={300}
+                height={300}
+                className="object-cover w-full h-full rounded-lg"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default ProfilePage;
+
+
+
+
+  builder.addCase(followUserProfile.fulfilled, (state) => {
+      if (state.profile) {
+        state.profile.isFollowing = true;
+        state.profile.followers += 1;
+      }
+    });
+
+    // ✅ Unfollow
+    builder.addCase(unfollowUserProfile.fulfilled, (state) => {
+      if (state.profile) {
+        state.profile.isFollowing = false;
+        state.profile.followers = Math.max(0, state.profile.followers - 1);
+      }
+    });
