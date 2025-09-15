@@ -20,29 +20,25 @@ const FeedPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
    const { isAuthenticated } = useAuth();
-
-  // ✅ Redux state
-  const {
-    items: feed,
-    loading,
-    error,
-    pagination,
-  } = useSelector((state: RootState) => state.feed);
-  // const hasFetched = useRef(false);
+  const { items: feed, loading, error, pagination } = useSelector(
+    (state: RootState) => state.feed
+  );
+  
+  const hasFetched = useRef(false);
   
 
   const handleItemUpdate = (updatedItem: FeedItem) => {
     dispatch(updateFeedItem(updatedItem));
   };
 
-   useEffect(() => {
+  useEffect(() => {
+    // ✅ Only fetch if we haven't fetched before AND feed is empty
+      if (!hasFetched.current && feed.length === 0) {
+      dispatch(fetchFeed({ page: 1, limit: 10 }));
+      hasFetched.current = true;
+    }
+  }, [dispatch, feed.length]);
   
-      // if (!hasFetched.current) {
-    dispatch(fetchFeed({ page: 1, limit: 10 }));
-    // hasFetched.current = true;
-  // }
-    
-  }, [dispatch]);
 
   const handleLoadMore = () => {
     if (pagination && pagination.page < pagination.totalPages) {

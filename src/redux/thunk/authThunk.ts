@@ -3,6 +3,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import {isValidPhone} from '@/lib/utils'
 import toast from "react-hot-toast";
+import { RootState } from "../store";
 
 const API_URL = "http://localhost:8080/auth";
 
@@ -24,8 +25,15 @@ export const requestOtp = createAsyncThunk(
 
 export const verifyOtp = createAsyncThunk(
   "auth/verify-otp",
-  async ({ phone, otp }: { phone: string; otp: string }, { rejectWithValue }) => {
+  async ({ phone, otp }: { phone: string; otp: string }, { rejectWithValue,getState }) => {
     try {
+       const state = getState() as RootState;
+      // ✅ If user already exists in state, skip API call
+      if (state.auth.user?.id) {
+        return state.auth.user;
+      }
+  
+
          // ✅ validate phone again (extra safety)
       if (!isValidPhone(phone)) {
         return rejectWithValue("Invalid phone number.");

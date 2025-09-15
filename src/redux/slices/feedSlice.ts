@@ -52,7 +52,7 @@ export type Comment = {
 
 //
 // --- State ---
-interface FeedState {
+export interface FeedState {
   items: FeedItem[];
   comments: { [feedId: string]: Comment[] }; // store comments by post ID
   loading: boolean;

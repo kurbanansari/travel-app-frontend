@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import api from "../services/api";
 import { RootState } from "../store";
 
+
 export const fetchFeed = createAsyncThunk(
   "feed/fetchFeed",
   async (
@@ -11,12 +12,22 @@ export const fetchFeed = createAsyncThunk(
     { rejectWithValue,getState}
   ) => {
     try {
+      //  const state = getState() as RootState;
+
+      // // ✅ If we already have data for this page, don’t fetch again
+      // const existingPage = state.feed.pagination?.page;
+      // if (existingPage === page && state.feed.items.length > 0) {
+      //   return rejectWithValue("Feed already loaded");
+      // }
        const state = getState() as RootState;
 
-      // ✅ If we already have data for this page, don’t fetch again
-      const existingPage = state.feed.pagination?.page;
-      if (existingPage === page && state.feed.items.length > 0) {
-        return rejectWithValue("Feed already loaded");
+      // ✅ If this page is already loaded, return existing data
+      if (state.feed.pagination?.page === page && state.feed.items.length > 0) {
+        return {
+          items: state.feed.items,
+          pagination: state.feed.pagination,
+          page,
+        };
       }
       const token = localStorage.getItem("token");
       if (!token) {

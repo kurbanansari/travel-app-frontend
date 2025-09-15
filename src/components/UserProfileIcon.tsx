@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store"; // adjust path to your store
 import { fetchProfile } from "@/redux//thunk/userThunk";
@@ -13,13 +13,13 @@ const UserProfileIcon = ()=> {
   const { user, isAuthenticated, loading } = useSelector(
     (state: RootState) => state.user
   );
-
+const effectRan = useRef(false);
   // ✅ Fetch profile if not already loaded
   useEffect(() => {
-       const token = localStorage.getItem("token");
-    if (token && !user) {
+      if (!effectRan.current) { 
       dispatch(fetchProfile());
-    }
+      effectRan.current = true;
+  }
   }, [dispatch, user]);
 
 
