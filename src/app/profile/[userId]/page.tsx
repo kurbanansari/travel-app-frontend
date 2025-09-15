@@ -33,11 +33,11 @@ const ProfilePage = () => {
   const token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
-  useEffect(() => {
-    if (!token) {
-      router.push("/login");
-    }
-  }, [token, router]);
+  // useEffect(() => {
+  //   if (!token) {
+  //     router.push("/login");
+  //   }
+  // }, [token, router]);
 
   useEffect(() => {
     if (userId) dispatch(fetchUserProfileById(userId));

@@ -2,6 +2,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 import {isValidPhone} from '@/lib/utils'
+import toast from "react-hot-toast";
 
 const API_URL = "http://localhost:8080/auth";
 
@@ -38,6 +39,7 @@ export const verifyOtp = createAsyncThunk(
         localStorage.setItem("userId", res.data?.data.user?.id);
         localStorage.setItem("user", JSON.stringify(res.data?.data.user));
       }
+      
       console.log(res);
       return res.data.data;
     } catch (err: any) {

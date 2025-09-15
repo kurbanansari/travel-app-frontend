@@ -18,21 +18,25 @@ import { isValidPhone } from '@/lib/utils'
 const LoginPage = () => {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
-  const { phone, otp, step, loading, message, error, token, user } = useSelector(
+  const { phone, otp, step, loading, message, error, token, user ,isAuthenticated} = useSelector(
     (state: RootState) => state.auth
   );
   
+useEffect(() => {
+  if (isAuthenticated) {
+    toast.success("Login successful!");
+    router.replace("/"); // ✅ replace to avoid back button loop
+  }
+}, [isAuthenticated, router]);
 
-  useEffect(() => {
-    if (token && user) {
-      localStorage.setItem("token", token);
-      localStorage.setItem("userId", user.id);
-      toast.success("Login successful!");
-      router.push("/feed");
-    }
-  }, [token, user, router]);
+useEffect(() => {
+  if (error) {
+    toast.error(error);
+  }
+}, [error]);
 
   return (
+   
     <div className="flex h-screen items-center justify-center bg-gradient-to-br from-green-50 px-4">
       <Toaster position="top-center" />
       <Card className="w-full max-w-sm pt-12 pb-12 shadow-lg rounded-2xl border bg-green-100">
@@ -126,6 +130,7 @@ const LoginPage = () => {
         </CardContent>
       </Card>
     </div>
+ 
   );
 };
 

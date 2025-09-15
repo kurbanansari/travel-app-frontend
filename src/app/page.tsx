@@ -1,7 +1,7 @@
 // app/page.tsx
 "use client";
 import React, { useEffect, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { shallowEqual, useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import { fetchFeed } from "@/redux/thunk/feedThunk";
 import { updateFeedItem, FeedItem } from "@/redux/slices/feedSlice";
@@ -12,9 +12,14 @@ import Header from "@/components/Header";
 
 import PostCard from "@/components/ui/PostCard";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/providers/AuthProvider";
+
+
+
 const FeedPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
+   const { isAuthenticated } = useAuth();
 
   // ✅ Redux state
   const {
@@ -23,26 +28,21 @@ const FeedPage = () => {
     error,
     pagination,
   } = useSelector((state: RootState) => state.feed);
-  const hasFetched = useRef(false);
-  // const handleItemUpdate = (updatedItem: any) => {
-  //   dispatch(updateFeedItem(updatedItem));
-  // };
+  // const hasFetched = useRef(false);
+  
+
   const handleItemUpdate = (updatedItem: FeedItem) => {
     dispatch(updateFeedItem(updatedItem));
   };
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/login");
-      return;
-    }
-
-    if (!hasFetched.current) {
-      dispatch(fetchFeed({ page: 1, limit: 10 }));
-      hasFetched.current = true; // ✅ persists across renders
-    }
-  }, [dispatch, router]);
+   useEffect(() => {
+  
+      // if (!hasFetched.current) {
+    dispatch(fetchFeed({ page: 1, limit: 10 }));
+    // hasFetched.current = true;
+  // }
+    
+  }, [dispatch]);
 
   const handleLoadMore = () => {
     if (pagination && pagination.page < pagination.totalPages) {

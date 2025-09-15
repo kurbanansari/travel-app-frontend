@@ -63,6 +63,7 @@ interface FeedState {
     totalRecords: number;
     totalPages: number;
   } | null;
+ 
 }
 
 const initialState: FeedState = {
@@ -71,6 +72,7 @@ const initialState: FeedState = {
   loading: false,
   error: null,
   pagination: null,
+  
 };
 
 //
@@ -118,6 +120,7 @@ const feedSlice = createSlice({
         }
 
         state.pagination = action.payload.pagination;
+        
       })
       .addCase(fetchFeed.rejected, (state, action) => {
         state.loading = false;

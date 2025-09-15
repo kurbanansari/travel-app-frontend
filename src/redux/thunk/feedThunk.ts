@@ -2,14 +2,22 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import toast from "react-hot-toast";
 import api from "../services/api";
+import { RootState } from "../store";
 
 export const fetchFeed = createAsyncThunk(
   "feed/fetchFeed",
   async (
     { page = 1, limit = 10 }: { page?: number; limit?: number },
-    { rejectWithValue }
+    { rejectWithValue,getState}
   ) => {
     try {
+       const state = getState() as RootState;
+
+      // ✅ If we already have data for this page, don’t fetch again
+      const existingPage = state.feed.pagination?.page;
+      if (existingPage === page && state.feed.items.length > 0) {
+        return rejectWithValue("Feed already loaded");
+      }
       const token = localStorage.getItem("token");
       if (!token) {
         return rejectWithValue("Unauthorized - No token");
@@ -36,6 +44,7 @@ export const fetchFeed = createAsyncThunk(
         pagination: data.pagination,
         page, // current page we requested
       };
+    
     } catch (err: any) {
       return rejectWithValue(err.message || "Network error");
     }

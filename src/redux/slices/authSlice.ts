@@ -2,6 +2,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { requestOtp, verifyOtp } from "../thunk/authThunk";
 
+const tokenFromStorage =
+  typeof window !== "undefined" ? localStorage.getItem("token") : null;
+const userFromStorage =
+  typeof window !== "undefined"
+    ? JSON.parse(localStorage.getItem("user") || "null")
+    : null;
+
+
 interface AuthState {
   loading: boolean;
   message: string | null;
@@ -18,9 +26,15 @@ const initialState: AuthState = {
   loading: false,
   message: null,
   error: null,
-   isAuthenticated: false,
-  token: null,
-  user: null,
+  token: tokenFromStorage,
+  user: userFromStorage,
+  isAuthenticated: !!tokenFromStorage,
+  //  isAuthenticated: false,
+  // token: null,
+  // user: null,
+  // token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
+  // isAuthenticated: typeof window !== "undefined" ? !!localStorage.getItem("token") : false,
+  // user: typeof window !== "undefined" ? JSON.parse(localStorage.getItem("user") || "null") : null,
   step: "phone",
   phone: "",
   otp: "",
@@ -39,6 +53,7 @@ const authSlice = createSlice({
     logout: (state) => {
       localStorage.removeItem("token");
       localStorage.removeItem("userId");
+      localStorage.removeItem("user");
        state.isAuthenticated = false;
       state.token = null;
       state.user = null;
@@ -46,6 +61,13 @@ const authSlice = createSlice({
       state.phone = "";
       state.otp = "";
     },
+    //  checkAuth: (state) => {
+    //   const token = localStorage.getItem("token");
+    //   const user = localStorage.getItem("user");
+    //   state.isAuthenticated = !!token;
+    //   state.token = token;
+    //   state.user = user ? JSON.parse(user) : null;
+    // },
   },
   extraReducers: (builder) => {
     builder

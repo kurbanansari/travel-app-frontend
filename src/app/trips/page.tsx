@@ -33,21 +33,15 @@ export default function TripsPage() {
   const [tripDesc, setTripDesc] = useState("");
   const [open, setOpen] = useState(false);
   const [starting, setStarting] = useState(false);
-  const mounted = useRef(false); // ✅ prevent double fetch in dev
+   // ✅ prevent double fetch in dev
   const [page, setPage] = useState(1);
 
 // ✅ Load first page only on mount
 useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    router.push("/login");
-    return;
-  }
-
-  if (!mounted.current) {
+  
     dispatch(fetchMyTrips({ page: 1, limit: 10 }));
-    mounted.current = true;
-  }
+   
+  
 }, [dispatch, router]);
 
 // ✅ Load more only if page > 1

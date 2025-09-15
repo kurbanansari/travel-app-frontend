@@ -34,11 +34,11 @@ export default function TripDetailPage() {
   const { photos, loading: photosLoading, error: photosError } = useSelector((state: RootState) => state.photos);
   const token = useSelector((state: RootState) => state.user);
 
-  useEffect(()=>{
-    if(!token){
-    router.push('/login')
-    }
-  },[token, router])
+  // useEffect(()=>{
+  //   if(!token){
+  //   router.push('/login')
+  //   }
+  // },[token, router])
 
   // Fetch trip details & photos
   useEffect(() => {

@@ -9,6 +9,10 @@ import Footer from "@/components/ui/Footer";
 
 
 
+import { AuthGuard } from "@/components/ui/AuthQuard";
+
+
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,10 +41,12 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ReduxProvider>
-          <SocketProvider>{children}</SocketProvider>
-          <ToasterProvider />
-          {children}
-          <Footer />
+          <SocketProvider>
+             <AuthGuard>
+              {children}  {/* ✅ Render children only once */}
+              <Footer />
+           </AuthGuard>
+          </SocketProvider>
         </ReduxProvider>
       </body>
     </html>
