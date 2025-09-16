@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams ,useRouter} from "next/navigation";
 import { clearCurrentTrip } from "@/redux/slices/tripSlice";
@@ -32,7 +32,7 @@ export default function TripDetailPage() {
      const [selected, setSelected] = useState<string[]>([]);
  const { currentTrip, loading: tripLoading, error: tripError } = useSelector((state: RootState) => state.trips);
   const { photos, loading: photosLoading, error: photosError } = useSelector((state: RootState) => state.photos);
-  const token = useSelector((state: RootState) => state.user);
+ const effectRan = useRef(false);
 
   // useEffect(()=>{
   //   if(!token){
@@ -42,6 +42,8 @@ export default function TripDetailPage() {
 
   // Fetch trip details & photos
   useEffect(() => {
+    if (effectRan.current) return; // ⛔ block 2nd run in dev
+  effectRan.current = true;
   if (!tripId || Array.isArray(tripId)) {
   toast.error("Invalid Trip ID");
   return;

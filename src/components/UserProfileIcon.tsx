@@ -10,9 +10,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const UserProfileIcon = ()=> {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, isAuthenticated, loading } = useSelector(
-    (state: RootState) => state.user
-  );
+   const { user } = useSelector((state: RootState) => state.user);
 const effectRan = useRef(false);
   // ✅ Fetch profile if not already loaded
   useEffect(() => {
@@ -20,7 +18,7 @@ const effectRan = useRef(false);
       dispatch(fetchProfile());
       effectRan.current = true;
   }
-  }, [dispatch, user]);
+  }, [dispatch]);
 
 
 

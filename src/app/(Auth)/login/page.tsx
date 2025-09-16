@@ -170,7 +170,7 @@ const LoginPage = () => {
   useEffect(() => {
     if (isAuthenticated && !hasSubmitted.current) {
       toast.success("Login successful!");
-      router.replace("/"); 
+      // router.replace("/"); 
       hasSubmitted.current = true;// avoid back button loop
     }
   }, [isAuthenticated, router]);

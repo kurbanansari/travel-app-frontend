@@ -48,7 +48,7 @@ interface UserState {
 const initialState: UserState = {
    user: null,
   profile: null,
-  loading: true,
+  loading: false,
   error: null,
   isAuthenticated: false,
   token:null,
@@ -99,16 +99,10 @@ const userSlice = createSlice({
       state.loading = true;
     });
     builder.addCase(fetchProfile.fulfilled, (state, action) => {
-    if (action.payload) {
-        state.user = action.payload;
-        state.isAuthenticated = true;
-       
-      } else {
-        // ✅ No token → clear user state
-        state.user = null;
-        state.isAuthenticated = false;
-      }
-      state.loading = false;
+    state.loading = false;
+  if (action.payload) {
+    state.user = action.payload;
+  }
     
     });
     builder.addCase(fetchProfile.rejected, (state, action) => {

@@ -5,20 +5,12 @@ import "./globals.css";
 import { ReduxProvider } from "@/providers/Provider";
 import { ToasterProvider } from "@/providers/ToasterProvider";
 import { SocketProvider } from "@/contexts/SocketContext";
-import Footer from "@/components/ui/Footer";
-
-
-
 import { AuthGuard } from "@/components/ui/AuthQuard";
-
-
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
-
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
@@ -34,20 +26,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <ReduxProvider>
-          <SocketProvider>
-             <AuthGuard>
-              {children}  {/* ✅ Render children only once */}
-              <Footer />
-           </AuthGuard>
-          </SocketProvider>
-        </ReduxProvider>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+
+       <ReduxProvider>
+      <SocketProvider>
+        <AuthGuard>
+        {children}
+        </AuthGuard>
+      </SocketProvider>
+    </ReduxProvider>
       </body>
     </html>
   );

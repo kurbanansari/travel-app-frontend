@@ -35,10 +35,11 @@ export default function TripsPage() {
   const [starting, setStarting] = useState(false);
    // ✅ prevent double fetch in dev
   const [page, setPage] = useState(1);
-
+const effectRan = useRef(false);
 // ✅ Load first page only on mount
 useEffect(() => {
-  
+  if (effectRan.current) return; // ✅ prevent 2nd run in dev
+  effectRan.current = true;
     dispatch(fetchMyTrips({ page: 1, limit: 10 }));
    
   

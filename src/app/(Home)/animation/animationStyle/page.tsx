@@ -189,6 +189,7 @@ function AnimationStylesContent() {
       ).unwrap();
 
       router.push(`/animation/preview?animationId=${res.animationId}`);
+      
     } catch (err) {
       console.error("Animation creation failed:", err);
     } finally {
