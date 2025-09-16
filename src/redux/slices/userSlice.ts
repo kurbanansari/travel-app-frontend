@@ -1,6 +1,6 @@
 "use client"
 import { createSlice , PayloadAction  } from "@reduxjs/toolkit";
-import { loginUser, fetchProfile, updateUserProfile, fetchUserProfileById } from "../thunk/userThunk";
+import{  updateUserProfile, fetchUserProfileById, fetchProfile } from "../thunk/userThunk";
 import { followUserProfile, unfollowUserProfile } from "../thunk/feedThunk";
 // ✅ Types
 export type HomeLocation = {
@@ -79,20 +79,20 @@ const userSlice = createSlice({
   },
   extraReducers: (builder) => {
     // ✅ Login
-    builder.addCase(loginUser.pending, (state) => {
-      state.loading = true;
-      state.error = null;
-    });
-    builder.addCase(loginUser.fulfilled, (state, action) => {
-      state.loading = false;
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.isAuthenticated = true;
-    });
-    builder.addCase(loginUser.rejected, (state, action) => {
-      state.loading = false;
-      state.error = action.payload as string;
-    });
+    // builder.addCase(loginUser.pending, (state) => {
+    //   state.loading = true;
+    //   state.error = null;
+    // });
+    // builder.addCase(loginUser.fulfilled, (state, action) => {
+    //   state.loading = false;
+    //   state.user = action.payload.user;
+    //   state.token = action.payload.token;
+    //   state.isAuthenticated = true;
+    // });
+    // builder.addCase(loginUser.rejected, (state, action) => {
+    //   state.loading = false;
+    //   state.error = action.payload as string;
+    // });
 
     // ✅ Fetch Profile
     builder.addCase(fetchProfile.pending, (state) => {
@@ -102,8 +102,10 @@ const userSlice = createSlice({
     state.loading = false;
   if (action.payload) {
     state.user = action.payload;
+    state.profile = action.payload;
   }
-    
+    // state.user = action.payload;
+    //   state.profile = action.payload;
     });
     builder.addCase(fetchProfile.rejected, (state, action) => {
       state.loading = false;

@@ -5,7 +5,7 @@ import {isValidPhone} from '@/lib/utils'
 import toast from "react-hot-toast";
 import { RootState } from "../store";
 
-const API_URL = "http://localhost:8080/auth";
+const API_URL = "http://localhost:8080";
 
 export const requestOtp = createAsyncThunk(
   "auth/request-otp",
@@ -15,7 +15,7 @@ export const requestOtp = createAsyncThunk(
       if (!isValidPhone(phone)) {
         return rejectWithValue("Invalid phone number. Please enter a 10-digit number starting with 6-9.");
       }
-      const res = await axios.post(`${API_URL}/request-otp`, { phone });
+      const res = await axios.post(`${API_URL}/auth/request-otp`, { phone });
       return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Failed to request OTP");
@@ -39,7 +39,7 @@ export const verifyOtp = createAsyncThunk(
         return rejectWithValue("Invalid phone number.");
       }
 
-      const res = await axios.post(`${API_URL}/verify-otp`, { phone, otp });
+      const res = await axios.post(`${API_URL}/auth/verify-otp`, { phone, otp });
 
       // Save token & user in localStorage
       if (res.data?.data?.token) {
@@ -55,3 +55,39 @@ export const verifyOtp = createAsyncThunk(
     }
   }
 );
+// ✅ Login user
+export const loginUser = createAsyncThunk(
+  "user/login",
+  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const res = await axios.post(`${API_URL}/auth/login`, credentials);
+      const { token, user } = res.data;
+
+      // save token in localStorage
+      localStorage.setItem("token", token);
+
+      return {user, token};
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || "Login failed");
+    }
+  }
+);
+// // ✅ Fetch profile
+// export const fetchProfile = createAsyncThunk(
+//   "user/fetchProfile",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//        const token = localStorage.getItem("token");
+
+//       const res = await axios.get(`${API_URL}/users/me`, {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }); 
+//       console.log(res);
+//       return res.data.data;
+//     } catch (err: any) {
+//       return rejectWithValue(err.response?.data || "Failed to load profile");
+//     }
+//   }
+// );

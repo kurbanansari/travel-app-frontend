@@ -3,22 +3,22 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../services/api";
 
 // ✅ Login user
-export const loginUser = createAsyncThunk(
-  "user/login",
-  async (credentials: { email: string; password: string }, { rejectWithValue }) => {
-    try {
-      const res = await api.post("/auth/login", credentials);
-      const { token, user } = res.data;
+// export const loginUser = createAsyncThunk(
+//   "user/login",
+//   async (credentials: { email: string; password: string }, { rejectWithValue }) => {
+//     try {
+//       const res = await api.post("/auth/login", credentials);
+//       const { token, user } = res.data;
 
-      // save token in localStorage
-      localStorage.setItem("token", token);
+//       // save token in localStorage
+//       localStorage.setItem("token", token);
 
-      return {user, token};
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data || "Login failed");
-    }
-  }
-);
+//       return {user, token};
+//     } catch (err: any) {
+//       return rejectWithValue(err.response?.data || "Login failed");
+//     }
+//   }
+// );
 
 // ✅ Fetch profile
 export const fetchProfile = createAsyncThunk(
@@ -26,11 +26,6 @@ export const fetchProfile = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
        const token = localStorage.getItem("token");
-
-      // ✅ No token → skip request gracefully
-      if (!token) {
-        return null;
-      }
 
       const res = await api.get("/users/me", {
         headers: {

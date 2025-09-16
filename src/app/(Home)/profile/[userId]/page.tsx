@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link, { useRouter, useParams } from "next/navigation";
 import Footer from "@/components/ui/Footer";
@@ -17,8 +17,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import {fetchUserProfileById} from '@/redux/thunk/userThunk'
+import {fetchProfile, fetchUserProfileById} from '@/redux/thunk/userThunk'
 import { followUserProfile, unfollowUserProfile} from '@/redux/thunk/feedThunk'
+
 
 const ProfilePage = () => {
   const params = useParams();
@@ -26,12 +27,16 @@ const ProfilePage = () => {
   const userId = params?.userId as string | undefined;
   const [followLoading, setFollowLoading] = useState(false);
    const dispatch = useDispatch<AppDispatch>();
-  const { profile, loading, error } = useSelector((state: RootState) => state.user);
+  const { profile, loading, error,user } = useSelector((state: RootState) => state.user);
+  // const { user } = useSelector((state: RootState) => state.auth);
+  // const [currentProfile, setCurrentProfile] = useState(user || null);
+  const isOwnProfile = profile?.id === user?.id;
+  const effectRan = useRef(false);
  
-  const loggedInUserId =
-    typeof window !== "undefined" ? localStorage.getItem("userId") : null;
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  // const loggedInUserId =
+  //   typeof window !== "undefined" ? localStorage.getItem("userId") : null;
+  // const token =
+  //   typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // useEffect(() => {
   //   if (!token) {
@@ -39,20 +44,70 @@ const ProfilePage = () => {
   //   }
   // }, [token, router]);
 
-  useEffect(() => {
-    if (userId) dispatch(fetchUserProfileById(userId));
+  // useEffect(() => {
+  //   if (userId) dispatch(fetchUserProfileById(userId));
+  // }, [userId, dispatch]);
+
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   // If visiting own profile, use /users/me
+  //   if (userId === "me") {
+  //     if (!profile?.id) {
+  //       dispatch(fetchProfile());
+  //     }
+  //   } else {
+  //     // Visiting another user's profile
+  //     dispatch(fetchUserProfileById(userId as string));
+  //   }
+  // }, [userId, profile?.id, dispatch]);
+   
+   useEffect(() => {
+    if (!userId) return;
+    
+
+    if (userId === "me") {
+      dispatch(fetchProfile());
+    } else {
+      dispatch(fetchUserProfileById(userId));
+    }
   }, [userId, dispatch]);
 
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   if (userId === "me") {
+  //     // Viewing own profile
+  //     if (!user) dispatch(fetchProfile());
+  //   } else {
+  //     // Viewing another user's profile
+  //     dispatch(fetchUserProfileById(userId));
+  //   }
+  // }, [userId, user?.id, dispatch]);
+
+  // useEffect(() => {
+  //   setCurrentProfile(profile);
+  // }, [profile]);
+
+  // useEffect(() => {
+  //   if (!userId) return;
+
+  //   if (userId === "me") {
+  //     if (!user?.id) dispatch(fetchProfile());
+  //   } else {
+  //     if (!user || user?.id !== userId) dispatch(fetchUserProfileById(userId));
+  //   }
+  // }, [userId, user?.id, dispatch]);
 
 const handleFollow = () => {
-  if (profile?.id) {
-    dispatch(followUserProfile({ item: profile.id }));
+  if (profile) {
+    dispatch(followUserProfile({ item: profile }));
   }
 };
 
 const handleUnfollow = () => {
-  if (profile?.id) {
-    dispatch(unfollowUserProfile({ item: profile.id }));
+  if (profile) {
+    dispatch(unfollowUserProfile({ item: profile }));
   }
 };
 
@@ -157,6 +212,8 @@ const handleUnfollow = () => {
           </div>
         </div>
       </div>
+       {/* {userId === "me" && ( */}
+        {isOwnProfile && (
       <div className="relative p-6">
         <Dialog>
           {/* ✅ Trigger button */}
@@ -175,7 +232,7 @@ const handleUnfollow = () => {
           </DialogContent>
         </Dialog>
       </div>
-
+  )}
       {/* Card with stats, name, bio, buttons */}
       <div className="mt-20 flex flex-col items-center px-4">
         {/* Stats */}
@@ -206,7 +263,9 @@ const handleUnfollow = () => {
         </div>
 
         {/* Buttons */}
-        {profile.id !== loggedInUserId && (
+        {/* {profile.id !== userId && ( */}
+        {/* {userId !== "me" && ( */}
+         {!isOwnProfile && (
           <div className="grid grid-cols-2 gap-3 mt-4 w-full max-w-xs">
             {profile.isFollowing ? (
               <button
@@ -271,7 +330,7 @@ const handleUnfollow = () => {
           ))}
         </div>
       </div>
-      <Footer />
+     
     </div>
   );
 };

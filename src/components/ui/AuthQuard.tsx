@@ -1,17 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { useSelector ,useDispatch} from "react-redux";
+
+import { AppDispatch, RootState } from "@/redux/store";
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { token, isAuthenticated, loading } = useSelector(
+  const { token, isAuthenticated, loading ,user} = useSelector(
     (state: RootState) => state.auth
   );
 
+const dispatch = useDispatch<AppDispatch>();
+  // const { user} = useSelector((state: RootState) => state.user);
+  const hasFetched = useRef(false);
   useEffect(() => {
     if (loading) return;
 
@@ -28,6 +32,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       router.replace("/login");
     }
   }, [isAuthenticated, loading, pathname, router]);
+  
+// useEffect(() => {
+//     if (!hasFetched.current) {
+//       dispatch(fetchProfile()); // ✅ fetch /me
+//       hasFetched.current = true;
+//     }
+//   }, [dispatch]);
+
 
   if (loading) return null;
 

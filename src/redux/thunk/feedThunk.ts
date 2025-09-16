@@ -225,6 +225,7 @@ export const followUserProfile = createAsyncThunk(
   async ({ item }: { item: any }, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
     try {
+      const userId =  item.user?.id ?? item.id; 
       const res = await fetch("http://localhost:8080/feed/follow", {
         method: "POST",
         headers: {
@@ -232,12 +233,14 @@ export const followUserProfile = createAsyncThunk(
           Accept: "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ followingId: item.user.id }),
+        body: JSON.stringify({ followingId: userId }),
       });
     console.log(res)
       const data = await res.json();
       if (res.ok && data.success) {
-        return { ...item, user: { ...item.user, isFollowing: true } };
+        // return { ...item, user: { ...item.user, isFollowing: true } };
+        // return { id: item.user.id, isFollowing: true };
+         return { id: userId, isFollowing: true };
       } else {
         toast.error(data.message || "Failed to follow");
         return rejectWithValue(data);
@@ -255,7 +258,8 @@ export const unfollowUserProfile = createAsyncThunk(
   async ({ item }: { item: any }, { rejectWithValue }) => {
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:8080/feed/unfollow/${item.user.id}`, {
+      const userId = item.user?.id ?? item.id;
+      const res = await fetch(`http://localhost:8080/feed/unfollow/${userId}`, {
         method: "DELETE",
         headers: {
           Accept: "application/json",
@@ -265,7 +269,9 @@ export const unfollowUserProfile = createAsyncThunk(
    console.log(res)
       const data = await res.json();
       if (res.ok && data.success) {
-        return { ...item, user: { ...item.user, isFollowing: false } };
+        // return { ...item, user: { ...item.user, isFollowing: false } };
+        //  return { id: item.user.id, isFollowing: false };
+         return { id: userId, isFollowing: false };
       } else {
         toast.error(data.message || "Failed to unfollow");
         return rejectWithValue(data);

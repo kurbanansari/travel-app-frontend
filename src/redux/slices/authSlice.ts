@@ -1,6 +1,6 @@
 // src/redux/slices/authSlice.ts
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { requestOtp, verifyOtp } from "../thunk/authThunk";
+import { loginUser, requestOtp, verifyOtp } from "../thunk/authThunk";
 
 const tokenFromStorage =
   typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -100,7 +100,22 @@ const authSlice = createSlice({
       .addCase(verifyOtp.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
+      })
+      builder.addCase(loginUser.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(loginUser.fulfilled, (state, action) => {
+      state.loading = false;
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+    });
+    builder.addCase(loginUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+      
   },
 });
 

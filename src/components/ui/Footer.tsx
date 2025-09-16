@@ -5,21 +5,33 @@ import { Home, Users, Heart, LayoutDashboard } from "lucide-react";
 import { Card, CardContent } from "./card";
 import Link from "next/link";
 import UserProfileIcon from "../UserProfileIcon";
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/redux/store";
 import { useRouter } from "next/navigation";
+import { fetchProfile } from "@/redux/thunk/userThunk";
+// import { fetchProfile } from "@/redux/thunk/authThunk";
 
 const Footer = () => {
-   const { user, isAuthenticated } = useSelector((state: RootState) => state.user);
+   const { profile} = useSelector((state: RootState) => state.user);
   const router = useRouter();
-   const handleProfileClick = () => {
-    if (isAuthenticated && user?.id) {
-      router.push(`/profile/${user.id}`);
-    } else {
+  const dispatch = useDispatch<AppDispatch>();
+
+  //  const handleProfileClick = () => {
+    //  dispatch(fetchProfile());
+      // router.push(`/profile/${user?.id}`);
+    // if (user?.id) {
+    //   router.push(`/profile/${user.id}`);
+    // }
       
-       router.push(`/profile/${user?.id}`); // 👈 fallback if not logged in
-    }
+    
+  // };
+  const handleProfileClick = () => {
+    
+      
+      router.push("/profile/me"); // 👈 fallback if not logged in
+    
   };
+
 
 
   return (

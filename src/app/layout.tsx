@@ -32,9 +32,9 @@ export default function RootLayout({
 
        <ReduxProvider>
       <SocketProvider>
-        <AuthGuard>
+        
         {children}
-        </AuthGuard>
+        
       </SocketProvider>
     </ReduxProvider>
       </body>
