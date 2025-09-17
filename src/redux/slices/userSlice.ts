@@ -1,6 +1,6 @@
 "use client"
 import { createSlice , PayloadAction  } from "@reduxjs/toolkit";
-import{  updateUserProfile, fetchUserProfileById, fetchProfile } from "../thunk/userThunk";
+import{  updateUserProfile, fetchUserProfileById, fetchProfile, uploadProfilePicture } from "../thunk/userThunk";
 import { followUserProfile, unfollowUserProfile } from "../thunk/feedThunk";
 // ✅ Types
 export type HomeLocation = {
@@ -39,6 +39,7 @@ export type Profile = {
 interface UserState {
   user: Profile | null;      // logged-in user
   profile: Profile | null;   // another user's profile 
+  // users: Record<string, Profile>;
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -48,6 +49,7 @@ interface UserState {
 const initialState: UserState = {
    user: null,
   profile: null,
+  // users: {},
   loading: false,
   error: null,
   isAuthenticated: false,
@@ -67,15 +69,30 @@ const userSlice = createSlice({
     },
      setUser: (state, action: PayloadAction<{ user: Profile; token: string }>) => {
       state.user = action.payload.user;
+      // state.users[action.payload.user.id] = action.payload.user; 
       state.token = action.payload.token;
       state.isAuthenticated = true;
     },
     clearUser: (state) => {
       state.user = null;
       state.profile = null;
+      // state.users = {};
       state.token = null;
       state.isAuthenticated = false;
     },
+  //   cacheUsers: (state, action: PayloadAction<Profile[]>) => {
+  //     action.payload.forEach((u) => {
+  //       state.users[u.id] = u;
+  //     });
+  // },
+  //  updateUserInCache: (state, action: PayloadAction<Profile>) => {
+  //     state.users[action.payload.id] = {
+  //       ...state.users[action.payload.id],
+  //       ...action.payload,
+  //     };
+  //     if (state.user?.id === action.payload.id) state.user = { ...state.user, ...action.payload };
+  //     if (state.profile?.id === action.payload.id) state.profile = { ...state.profile, ...action.payload };
+  //   },
   },
   extraReducers: (builder) => {
     // ✅ Login
@@ -103,6 +120,7 @@ const userSlice = createSlice({
   if (action.payload) {
     state.user = action.payload;
     state.profile = action.payload;
+    //  state.users[action.payload.id] = action.payload; // ✅ cache
   }
     // state.user = action.payload;
     //   state.profile = action.payload;
@@ -118,6 +136,7 @@ const userSlice = createSlice({
     builder.addCase(fetchUserProfileById.fulfilled, (state, action: PayloadAction<Profile>) => {
       state.loading = false;
       state.profile = action.payload;
+      //  state.users[action.payload.id] = action.payload; // ✅ cache
     });
     builder.addCase(fetchUserProfileById.rejected, (state, action) => {
       state.loading = false;
@@ -127,15 +146,68 @@ const userSlice = createSlice({
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = true;
   }
+  //  if (state.profile?.id === action.payload.id) {
+  //         state.profile.isFollowing = true;
+  //       }
+  //       if (state.users[action.payload.id]) {
+  //         state.users[action.payload.id] = {
+  //           ...state.users[action.payload.id],
+  //           isFollowing: true,
+  //         };
+  //       }
 })  
 .addCase(unfollowUserProfile.fulfilled, (state, action) => {
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = false;
   }
+  //  if (state.profile?.id === action.payload.id) {
+  //         state.profile.isFollowing = false;
+  //       }
+  //       if (state.users[action.payload.id]) {
+  //         state.users[action.payload.id] = {
+  //           ...state.users[action.payload.id],
+  //           isFollowing: false,
+  //         };
+  //       }
 });
     // ✅ Update Profile
     builder.addCase(updateUserProfile.fulfilled, (state, action) => {
       state.user = { ...state.user, ...action.payload };
+    })
+    // if (state.user?.id === action.payload.id) {
+    //       state.user = { ...state.user, ...action.payload };
+    //     }
+    //     state.users[action.payload.id] = {
+    //       ...state.users[action.payload.id],
+    //       ...action.payload,
+    //     };
+    //   })
+      // ✅ Upload profile picture
+    builder.addCase(uploadProfilePicture.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(uploadProfilePicture.fulfilled, (state, action: PayloadAction<Profile>) => {
+      state.loading = false;
+      // backend usually returns updated user object
+     state.user = { ...state.user, ...action.payload }; // expects user fields
+  if (state.user?.id === state.profile?.id) {
+    state.profile = state.user;
+  }
+  // if (state.user?.id === action.payload.id) {
+  //         state.user = { ...state.user, ...action.payload };
+  //       }
+  //       if (state.profile?.id === action.payload.id) {
+  //         state.profile = { ...state.profile, ...action.payload };
+  //       }
+  //       state.users[action.payload.id] = {
+  //         ...state.users[action.payload.id],
+  //         ...action.payload,
+  //       };
+    });
+    builder.addCase(uploadProfilePicture.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
     });
   },
 });

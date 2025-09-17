@@ -19,6 +19,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import {fetchProfile, fetchUserProfileById} from '@/redux/thunk/userThunk'
 import { followUserProfile, unfollowUserProfile} from '@/redux/thunk/feedThunk'
+import { IoIosArrowBack } from "react-icons/io";
+import { FcPlus } from "react-icons/fc";
+import UploadProfilePic from "@/components/UploadProfilePic";
 
 
 const ProfilePage = () => {
@@ -178,20 +181,7 @@ const handleUnfollow = () => {
           className="absolute left-4 top-7 text-gray-500 hover:text-gray-700 z-10"
           onClick={() => router.back()}
         >
-          <svg
-            width={28}
-            height={28}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
+          <IoIosArrowBack size={30} />
         </button>
         {/* Avatar */}
         <div className="absolute left-1/2 -translate-x-1/2 top-24 z-10">
@@ -203,12 +193,30 @@ const handleUnfollow = () => {
                 width={96}
                 height={96}
                 className="object-cover"
+               
               />
             ) : (
               <span className="text-4xl text-gray-400 font-bold">
                 {profile?.name?.[0] || "?"}
               </span>
             )}
+            {isOwnProfile && (
+    <Dialog>
+      <DialogTrigger asChild>
+        <button
+          className="absolute bottom-0 right-0 bg-green-600 text-white rounded-full p-1 shadow hover:bg-green-700"
+        >
+          <FcPlus size={20} />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Upload Profile Picture</DialogTitle>
+        </DialogHeader>
+        <UploadProfilePic /> {/* ✅ reuse your upload component */}
+      </DialogContent>
+    </Dialog>
+  )}
           </div>
         </div>
       </div>
@@ -231,7 +239,8 @@ const handleUnfollow = () => {
             <EditProfileForm />
           </DialogContent>
         </Dialog>
-      </div>
+      
+      </div>   
   )}
       {/* Card with stats, name, bio, buttons */}
       <div className="mt-20 flex flex-col items-center px-4">

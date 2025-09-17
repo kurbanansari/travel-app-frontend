@@ -10,7 +10,9 @@ export default function LoginLayout({
 }) {
   return (
     <>
+    <AuthGuard>
       {children}
+      </AuthGuard>
       </>
   );
 }

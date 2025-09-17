@@ -1,6 +1,7 @@
 "use client"
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../services/api";
+import axios from "axios";
 
 // ✅ Login user
 // export const loginUser = createAsyncThunk(
@@ -60,18 +61,6 @@ export const fetchUserProfileById = createAsyncThunk(
   }
 );
 
-// // ✅ Update profile
-// export const updateProfile = createAsyncThunk(
-//   "user/updateProfile",
-//   async (payload: { name: string; bio: string }, { rejectWithValue }) => {
-//     try {
-//       const res = await api.put("/users/update", payload);
-//       return res.data;
-//     } catch (err: any) {
-//       return rejectWithValue(err.response?.data || "Profile update failed");
-//     }
-//   }
-// );
 
 
 export const updateUserProfile = createAsyncThunk(
@@ -94,6 +83,39 @@ export const updateUserProfile = createAsyncThunk(
       return res.data.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Failed to update profile");
+    }
+  }
+);
+
+
+export const uploadProfilePicture = createAsyncThunk(
+  "user/uploadProfilePicture",
+  async (file: File, { rejectWithValue }) => {
+    if (!file) return rejectWithValue({ message: "No file selected" });
+
+    try {
+      const formData = new FormData();
+      formData.append("profile_picture", file); // must match backend key
+
+      const response = await api.post(
+        "/users/me/upload-profile-picture",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": undefined,
+            // DO NOT set Content-Type manually!
+          },
+        }
+      );
+
+      if (!response.data.success) {
+        return rejectWithValue(response.data);
+      }
+
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || { message: "Upload failed" });
     }
   }
 );

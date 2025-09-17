@@ -3,13 +3,14 @@
 
 import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit";
 import { fetchFeed, toggleLike, sharePost,fetchComments,postComment, followUserProfile, unfollowUserProfile } from "@/redux/thunk/feedThunk";
-
+import { Profile } from "./userSlice";
 //
 // --- Types ---
 export type User = {
   id: string;
   name: string;
-  profilePic: string | null;
+  // profilePic: string | null;
+  profile_pic_url: string | null;
   isFollowing?: boolean;
 };
 
@@ -19,6 +20,7 @@ export type AnimationFeed = {
   title: string;
   video_url: string;
   user: User;
+  // userId: string; 
   likesCount: number;
   shareCount: number;
   commentsCount: number;
@@ -33,6 +35,7 @@ export type PhotoFeed = {
   url: string;
   caption: string;
   user: User;
+  // userId: string; 
   likesCount: number;
   shareCount: number;
   commentsCount: number;

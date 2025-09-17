@@ -31,6 +31,7 @@ import { makeSelectCommentsById } from "@/redux/slices/feedSlice";
 import toast from "react-hot-toast";
 import { useSocket } from "@/contexts/SocketContext";
 import type { FeedItem } from "@/redux/slices/feedSlice";
+import { Input } from "./input";
 
 const PostCard = ({ item, onItemUpdate }: { item: FeedItem; onItemUpdate: (updatedItem: FeedItem) => void }) => {
   const searchParams = useSearchParams();
@@ -49,16 +50,17 @@ const PostCard = ({ item, onItemUpdate }: { item: FeedItem; onItemUpdate: (updat
 
   const selectComments = makeSelectCommentsById(item.id);
   const comments = useSelector(selectComments);
+  const currentUserId = useSelector((state: RootState) => state.user.user?.id);
 
    const router = useRouter(); 
-useEffect(() => {
-  const t = localStorage.getItem("token");
-    setToken(t);
-    if (!t) {
-       router.push("/login");
-      return;
-    }
-}, []);
+// useEffect(() => {
+//   const token = localStorage.getItem("token");
+//     setToken(token);
+//     if (!token) {
+//        router.push("/login");
+//       return;
+//     }
+// }, []);
 
 
 useEffect(() => {
@@ -192,11 +194,11 @@ const handlePostComment = async () => {
 
 
 const handleFollow = async () => {
-  if (!token) return;
+  // if (!token) return;
   setFollowLoadingId(item.user.id);
   try {
-    const result = await dispatch(followUserProfile({ item })).unwrap();
-    onItemUpdate(result); // ✅ update local PostCard item
+    await dispatch(followUserProfile({ item })).unwrap();
+    onItemUpdate({ ...item, user: { ...item.user, isFollowing: true } }); // ✅ update local PostCard item
   } catch (err) {
     console.error(err);
     toast.error("Failed to follow user");
@@ -206,11 +208,11 @@ const handleFollow = async () => {
 };
 
 const handleUnfollow = async () => {
-  if (!token) return;
+  // if (!token) return;
   setFollowLoadingId(item.user.id);
   try {
-    const result = await dispatch(unfollowUserProfile({ item })).unwrap();
-    onItemUpdate(result); // ✅ update local PostCard item
+    await dispatch(unfollowUserProfile({ item })).unwrap();
+    onItemUpdate({ ...item, user: { ...item.user, isFollowing: false } }); // ✅ update local PostCard item
   } catch (err) {
     console.error(err);
     toast.error("Failed to unfollow user");
@@ -227,7 +229,7 @@ const handleUnfollow = async () => {
   <CardHeader className="flex flex-row items-center justify-between py-3 sm:py-4 flex-wrap gap-2">
     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
       <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-        <AvatarImage src={item.user.profilePic || ""} alt="{item.user.name}" />
+        <AvatarImage src={item.user.profile_pic_url || ""} alt="{item.user.name}" />
         <AvatarFallback>
             {/* {item.user.name[0]}  */}
             {item.user?.name?.[0] ?? "?"}
@@ -445,7 +447,7 @@ const handleUnfollow = async () => {
           comments.map((c,index) => (
             <div key={`${c.id}-${index}`} className="flex items-start gap-2">
               <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                <AvatarImage src={c?.user?.profilePic || ""} />
+                <AvatarImage src={c?.user?.profile_pic_url || ""} />
                 <AvatarFallback>
                      {c?.user?.name?.[0] || "?"}
         
@@ -466,9 +468,9 @@ const handleUnfollow = async () => {
           ))
         )}
       </div>
-      {token && (
+      {/* {token && ( */}
         <div className="flex gap-2">
-          <input
+          <Input
             type="text"
             value={commentText}
             onChange={(e) => setCommentText(e.target.value)}
@@ -479,12 +481,12 @@ const handleUnfollow = async () => {
           <Button
              onClick={handlePostComment}
             disabled={commentLoading || !commentText.trim()}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition"
+            className="bg-green-500 hover:bg-green-600 text-white px-2 sm:px-4 py-1 sm:py-2 rounded-lg font-semibold text-xs sm:text-sm transition"
           >
             Post
           </Button>
         </div>
-      )}
+      {/* )} */}
       
     </CardContent>
   )}

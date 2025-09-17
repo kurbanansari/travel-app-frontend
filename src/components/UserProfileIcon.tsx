@@ -26,11 +26,11 @@ const effectRan = useRef(false);
   //     dispatch(fetchProfile());
   //   }
   // }, [user?.id, dispatch]);
-useEffect(() => {
-    if (!user?.id) {
-      dispatch(fetchProfile());
-    }
-  }, [user?.id, dispatch]);
+// useEffect(() => {
+//     if (!user?.id) {
+//       dispatch(fetchProfile());
+//     }
+//   }, [user?.id, dispatch]);
 
 
   return (
