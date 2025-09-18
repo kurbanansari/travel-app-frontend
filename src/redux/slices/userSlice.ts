@@ -36,6 +36,8 @@ export type Profile = {
 };
 
 
+
+
 interface UserState {
   user: Profile | null;      // logged-in user
   profile: Profile | null;   // another user's profile 
@@ -60,15 +62,15 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.profile = null;
-      state.isAuthenticated = false;
-      state.token = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("user");
-    },
+    // logout: (state) => {
+    //   state.user = null;
+    //   state.profile = null;
+    //   state.isAuthenticated = false;
+    //   state.token = null;
+    //   localStorage.removeItem("token");
+    //   localStorage.removeItem("userId");
+    //   localStorage.removeItem("user");
+    // },
      setUser: (state, action: PayloadAction<{ user: Profile; token: string }>) => {
       state.user = action.payload.user;
       // state.users[action.payload.user.id] = action.payload.user; 
@@ -214,5 +216,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { logout ,setUser , clearUser } = userSlice.actions;
+export const {  setUser , clearUser } = userSlice.actions;
 export default userSlice.reducer;

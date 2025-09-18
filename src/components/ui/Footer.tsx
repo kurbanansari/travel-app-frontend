@@ -5,26 +5,17 @@ import { Home, Users, Heart, LayoutDashboard } from "lucide-react";
 import { Card, CardContent } from "./card";
 import Link from "next/link";
 import UserProfileIcon from "../UserProfileIcon";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@/redux/store";
+
 import { useRouter } from "next/navigation";
-import { fetchProfile } from "@/redux/thunk/userThunk";
-// import { fetchProfile } from "@/redux/thunk/authThunk";
+
 
 const Footer = () => {
-   const { profile} = useSelector((state: RootState) => state.user);
+ 
   const router = useRouter();
-  const dispatch = useDispatch<AppDispatch>();
+ 
 
-  //  const handleProfileClick = () => {
-    //  dispatch(fetchProfile());
-      // router.push(`/profile/${user?.id}`);
-    // if (user?.id) {
-    //   router.push(`/profile/${user.id}`);
-    // }
-      
     
-  // };
+  
   const handleProfileClick = () => {
     
       
@@ -44,7 +35,7 @@ const Footer = () => {
           </Link>
 
           {/* Users */}
-          <Link href="/users" className="flex-1 flex justify-center">
+          <Link href="/search_users" className="flex-1 flex justify-center">
             <Users className="transition-transform duration-300 hover:scale-110 hover:text-green-600" />
           </Link>
 

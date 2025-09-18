@@ -6,7 +6,8 @@ import  authReducer from './slices/authSlice';
 import tripsReducer from './slices/tripSlice';
 import photoReducer from './slices/photoSlice';
 import animationReducer from './slices/animationSlice'
-import feedReducer from './slices/feedSlice'
+import feedReducer from './slices/feedSlice';
+import searchReducer from "./slices/searchSlice";
 
 
 
@@ -19,6 +20,7 @@ export const store = configureStore({
      photos: photoReducer,
       animation: animationReducer,
       feed :feedReducer,
+      search:searchReducer
      
   },
 });
