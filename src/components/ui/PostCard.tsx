@@ -244,7 +244,7 @@ const handleUnfollow = async () => {
    {item.user.id !== localStorage.getItem("userId") && (
   item.user.isFollowing ? (
     <Button
-      variant="secondary"
+      variant="outline"
       size="sm"
       onClick={handleUnfollow}
       disabled={followLoadingId === item.user.id}

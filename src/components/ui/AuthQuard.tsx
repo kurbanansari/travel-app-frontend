@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useSelector ,useDispatch} from "react-redux";
 
@@ -12,6 +12,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { token, isAuthenticated, loading ,user} = useSelector(
     (state: RootState) => state.auth
   );
+   const [checked, setChecked] = useState(false); 
 
 const dispatch = useDispatch<AppDispatch>();
   // const { user} = useSelector((state: RootState) => state.user);
@@ -31,6 +32,10 @@ const dispatch = useDispatch<AppDispatch>();
     if (!isAuthenticated && !publicRoutes.includes(pathname)) {
       router.replace("/login");
     }
+    else {
+      // Auth status ok → render children
+      setChecked(true);
+    }
   }, [isAuthenticated, loading, pathname, router]);
   
 // useEffect(() => {
@@ -41,7 +46,7 @@ const dispatch = useDispatch<AppDispatch>();
 //   }, [dispatch]);
 
 
-  if (loading) return null;
+  if (loading || !checked) return null;
 
   return <>{children}</>;
 }

@@ -14,12 +14,12 @@ const UserProfileIcon = ()=> {
    const { user} = useSelector((state: RootState) => state.user);
 const effectRan = useRef(false);
   // ✅ Fetch profile if not already loaded
-  // useEffect(() => {
-  //     if (!effectRan.current) { 
-  //     dispatch(fetchProfile());
-  //     effectRan.current = true;
-  // }
-  // }, [dispatch]);
+  useEffect(() => {
+      if (!effectRan.current) { 
+      dispatch(fetchProfile());
+      effectRan.current = true;
+  }
+  }, [dispatch]);
   // useEffect(() => {
   
   //   if (!user?.id) {
