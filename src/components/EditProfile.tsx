@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import toast from "react-hot-toast";
+import { logout } from "@/redux/slices/authSlice";
+import { useRouter } from "next/navigation";
 
 export default function EditProfileForm() {
 const dispatch = useDispatch<AppDispatch>();
-
+const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
     bio: "",
@@ -28,6 +30,11 @@ const dispatch = useDispatch<AppDispatch>();
       lng: 0,
     },
   });
+  const handleLogout = () => {
+    dispatch(logout());
+    toast.success("Logged out successfully ✅");
+    // router.push("/login"); // redirect to login page
+  };
 
   
   // ✅ Autofill location
@@ -159,6 +166,14 @@ const dispatch = useDispatch<AppDispatch>();
 
         <Button onClick={handleSubmit} className="w-full">
           Save Profile
+        </Button>
+      {/* 🚀 Logout Button */}
+        <Button
+          onClick={handleLogout}
+          variant="destructive"
+          className="w-full mt-3"
+        >
+          Logout
         </Button>
       </CardContent>
     </Card>

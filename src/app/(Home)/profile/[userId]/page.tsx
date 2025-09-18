@@ -7,6 +7,7 @@ import Footer from "@/components/ui/Footer";
 import { SmartImage } from "@/components/ui/SmartImage";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditProfileForm from "@/components/EditProfile";
+import { MoreVertical } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,11 +18,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
-import {fetchProfile, fetchUserProfileById} from '@/redux/thunk/userThunk'
-import { followUserProfile, unfollowUserProfile} from '@/redux/thunk/feedThunk'
+import { fetchProfile, fetchUserProfileById } from "@/redux/thunk/userThunk";
+import {
+  followUserProfile,
+  unfollowUserProfile,
+} from "@/redux/thunk/feedThunk";
 import { IoIosArrowBack } from "react-icons/io";
 import { FcPlus } from "react-icons/fc";
 import UploadProfilePic from "@/components/UploadProfilePic";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 
 const ProfilePage = () => {
@@ -29,13 +40,15 @@ const ProfilePage = () => {
   const router = useRouter();
   const userId = params?.userId as string | undefined;
   const [followLoading, setFollowLoading] = useState(false);
-   const dispatch = useDispatch<AppDispatch>();
-  const { profile, loading, error,user } = useSelector((state: RootState) => state.user);
+  const dispatch = useDispatch<AppDispatch>();
+  const { profile, loading, error, user } = useSelector(
+    (state: RootState) => state.user
+  );
   // const { user } = useSelector((state: RootState) => state.auth);
   // const [currentProfile, setCurrentProfile] = useState(user || null);
   const isOwnProfile = profile?.id === user?.id;
   const effectRan = useRef(false);
- 
+
   // const loggedInUserId =
   //   typeof window !== "undefined" ? localStorage.getItem("userId") : null;
   // const token =
@@ -64,10 +77,9 @@ const ProfilePage = () => {
   //     dispatch(fetchUserProfileById(userId as string));
   //   }
   // }, [userId, profile?.id, dispatch]);
-   
-   useEffect(() => {
+
+  useEffect(() => {
     if (!userId) return;
-    
 
     if (userId === "me") {
       dispatch(fetchProfile());
@@ -102,17 +114,17 @@ const ProfilePage = () => {
   //   }
   // }, [userId, user?.id, dispatch]);
 
-const handleFollow = () => {
-  if (profile) {
-    dispatch(followUserProfile({ item: profile }));
-  }
-};
+  const handleFollow = () => {
+    if (profile) {
+      dispatch(followUserProfile({ item: profile }));
+    }
+  };
 
-const handleUnfollow = () => {
-  if (profile) {
-    dispatch(unfollowUserProfile({ item: profile }));
-  }
-};
+  const handleUnfollow = () => {
+    if (profile) {
+      dispatch(unfollowUserProfile({ item: profile }));
+    }
+  };
 
   if (loading) {
     return (
@@ -172,10 +184,40 @@ const handleUnfollow = () => {
   }
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white pb-8">
+    <div className="max-w-xl mx-auto min-h-screen bg-white pb-8">
       {/* Header background */}
       <div className="relative">
-        <div className="h-44 bg-gradient-to-b from-[#D0F5E4] to-[#F0FFF5] rounded-b-3xl"></div>
+        <div className="h-44 bg-gradient-to-b from-[#D0F5E4] to-[#F0FFF5] rounded-b-3xl">
+            {/* {userId === "me" && ( */}
+      {isOwnProfile && (
+           <div className="relative p-6">
+          <Sheet>
+  <SheetTrigger asChild>
+    {/* <Button variant="outline" className="absolute right-4 top-7">
+      ...
+    </Button> */}
+    <Button
+  variant="outline"
+  size="icon"
+  className="absolute right-4 top-7 rounded-full"
+>
+  <MoreVertical className="h-5 w-5" />
+</Button>
+  </SheetTrigger>
+
+  <SheetContent side="right" className="w-full sm:w-[500px]">
+    <SheetHeader>
+      <SheetTitle className="">Edit Profile</SheetTitle>
+    </SheetHeader>
+    <div className="">
+      <EditProfileForm />
+    </div>
+  </SheetContent>
+</Sheet>
+
+        </div>
+      )}
+        </div>
         {/* Back button */}
         <button
           className="absolute left-4 top-7 text-gray-500 hover:text-gray-700 z-10"
@@ -193,7 +235,6 @@ const handleUnfollow = () => {
                 width={96}
                 height={96}
                 className="object-cover"
-               
               />
             ) : (
               <span className="text-4xl text-gray-400 font-bold">
@@ -201,80 +242,58 @@ const handleUnfollow = () => {
               </span>
             )}
             {isOwnProfile && (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          className="absolute bottom-0 right-0 bg-green-600 text-white rounded-full p-1 shadow hover:bg-green-700"
-        >
-          <FcPlus size={20} />
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Upload Profile Picture</DialogTitle>
-        </DialogHeader>
-        <UploadProfilePic /> {/* ✅ reuse your upload component */}
-      </DialogContent>
-    </Dialog>
-  )}
+              <Dialog>
+                <DialogTrigger asChild>
+                  <button className="absolute bottom-0 right-0 bg-green-600 text-white rounded-full p-1 shadow hover:bg-green-700">
+                    <FcPlus size={20} />
+                  </button>
+                </DialogTrigger>
+                <DialogContent className="max-w-sm">
+                  <DialogHeader>
+                    <DialogTitle>Upload Profile Picture</DialogTitle>
+                  </DialogHeader>
+                  <UploadProfilePic /> {/* ✅ reuse your upload component */}
+                </DialogContent>
+              </Dialog>
+            )}
           </div>
         </div>
       </div>
-       {/* {userId === "me" && ( */}
-        {isOwnProfile && (
-      <div className="relative p-6">
-        <Dialog>
-          {/* ✅ Trigger button */}
-          <DialogTrigger asChild>
-            <Button variant={"outline"} className="absolute right-4 top-7">
-              Edit Profile
-            </Button>
-          </DialogTrigger>
-
-          {/* ✅ Modal Content */}
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Edit Profile</DialogTitle>
-            </DialogHeader>
-            <EditProfileForm />
-          </DialogContent>
-        </Dialog>
-      
-      </div>   
-  )}
+   
       {/* Card with stats, name, bio, buttons */}
-      <div className="mt-20 flex flex-col items-center px-4">
-        {/* Stats */}
-        <div className="flex gap-8 mb-2">
+      <div className="mt-6 flex flex-col items-center px-4">
+        
+        <div className="flex gap-8 mb-3 cursor-pointer">
           <div className="flex flex-col items-center">
-            <span className="font-bold text-lg">
+            <span className="font-bold text-xl">
               {profile.posts.toString().padStart(2, "0")}
             </span>
-            <span className="text-xs text-gray-500">Posts</span>
+            <span className="text-xs text-gray-500 hover:text-gray-600">Posts</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="font-bold text-lg">
+            <span className="font-bold text-xl">
               {profile.followers.toLocaleString()}
             </span>
-            <span className="text-xs text-gray-500">Followers</span>
+            <span className="text-xs text-gray-500 hover:text-gray-600">Followers</span>
           </div>
           <div className="flex flex-col items-center">
-            <span className="font-bold text-lg">
+            <span className="font-bold text-xl">
               {profile.following.toLocaleString()}
             </span>
-            <span className="text-xs text-gray-500">Following</span>
+            <span className="text-xs text-gray-500 hover:text-gray-600">Following</span>
           </div>
         </div>
-        {/* Name and bio */}
-        <div className="font-semibold text-xl mt-1">{profile.name}</div>
+       
+        <div className="font-bold text-xl mt-1">{profile.name}</div>
         <div className="text-gray-500 text-sm text-center mt-1">
           {profile.bio}
         </div>
+        
 
         {/* Buttons */}
         {/* {profile.id !== userId && ( */}
         {/* {userId !== "me" && ( */}
-         {!isOwnProfile && (
+        {!isOwnProfile && (
           <div className="grid grid-cols-2 gap-3 mt-4 w-full max-w-xs">
             {profile.isFollowing ? (
               <button
@@ -339,7 +358,6 @@ const handleUnfollow = () => {
           ))}
         </div>
       </div>
-     
     </div>
   );
 };

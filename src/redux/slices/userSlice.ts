@@ -66,6 +66,8 @@ const userSlice = createSlice({
       state.isAuthenticated = false;
       state.token = null;
       localStorage.removeItem("token");
+      localStorage.removeItem("userId");
+      localStorage.removeItem("user");
     },
      setUser: (state, action: PayloadAction<{ user: Profile; token: string }>) => {
       state.user = action.payload.user;
