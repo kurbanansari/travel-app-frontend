@@ -6,7 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+// type SearchBoxProps = {
+//   onSelectConversation?: (userId: string) => void; // optional callback
+// };
 export default function SearchBox() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
@@ -47,7 +49,7 @@ export default function SearchBox() {
               {results.map((u) => (
                 <li
                   key={u.id}
-                   onClick={() => goToUserProfile(u.id)}
+                  onClick={() => goToUserProfile(u.id)}
                   className="px-4 py-2 bg-green-50 rounded-lg hover:bg-green-100 cursor-pointer transition"
                 >
                   {u.name}

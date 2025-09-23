@@ -11,15 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
 
 import PostCard from "@/components/ui/PostCard";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/providers/AuthProvider";
+
+
 
 
 
 const FeedPage = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const router = useRouter();
-   const { isAuthenticated } = useAuth();
+ 
   const { items: feed, loading, error, pagination } = useSelector(
     (state: RootState) => state.feed
   );

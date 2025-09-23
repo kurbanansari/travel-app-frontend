@@ -3,9 +3,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/providers/Provider";
-import { ToasterProvider } from "@/providers/ToasterProvider";
 import { SocketProvider } from "@/contexts/SocketContext";
-import { AuthGuard } from "@/components/ui/AuthQuard";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

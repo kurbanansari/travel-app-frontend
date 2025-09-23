@@ -8,6 +8,7 @@ import photoReducer from './slices/photoSlice';
 import animationReducer from './slices/animationSlice'
 import feedReducer from './slices/feedSlice';
 import searchReducer from "./slices/searchSlice";
+import chatReducer from './slices/chatSlice'
 
 
 
@@ -20,7 +21,8 @@ export const store = configureStore({
      photos: photoReducer,
       animation: animationReducer,
       feed :feedReducer,
-      search:searchReducer
+      search:searchReducer,
+     chat:chatReducer
      
   },
 });

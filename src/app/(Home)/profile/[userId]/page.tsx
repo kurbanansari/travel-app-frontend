@@ -33,6 +33,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import { clearUser } from "@/redux/slices/userSlice";
 
 
 const ProfilePage = () => {
@@ -41,9 +42,13 @@ const ProfilePage = () => {
   const userId = params?.userId as string | undefined;
   const [followLoading, setFollowLoading] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
+  // const { profile, loading, error, user } = useSelector(
+  //   (state: RootState) => state.user
+  // );
   const { profile, loading, error, user } = useSelector(
     (state: RootState) => state.user
-  );
+);
+
   
   const isOwnProfile = profile?.id === user?.id;
   const effectRan = useRef(false);
@@ -51,8 +56,10 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (effectRan.current) return;
-    if (!userId) return;
-
+    if (!userId) {
+      dispatch(clearUser()); // Optional: Clear user state if no userId
+      return;
+    }
     if (userId === "me") {
       dispatch(fetchProfile());
     } else {
@@ -71,6 +78,11 @@ const ProfilePage = () => {
   const handleUnfollow = () => {
     if (profile) {
       dispatch(unfollowUserProfile({ item: profile }));
+    }
+  };
+  const handleSendMessage = () => {
+    if (profile?.id) {
+      router.push(`/chat?userId=${profile.id}`);
     }
   };
 
@@ -244,28 +256,29 @@ const ProfilePage = () => {
         {!isOwnProfile && (
           <div className="grid grid-cols-2 gap-3 mt-4 w-full max-w-xs">
             {profile.isFollowing ? (
-              <button
+              <Button
                 className="bg-green-600 text-white py-2 text-sm w-full rounded-full font-semibold shadow hover:bg-green-700 transition"
                 onClick={handleUnfollow}
                 disabled={followLoading}
               >
                 {followLoading ? "..." : "Following"}
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
                 className="bg-green-600 text-white py-2 w-full rounded-full font-semibold text-sm shadow hover:bg-green-700 transition"
                 onClick={handleFollow}
                 disabled={followLoading}
               >
                 {followLoading ? "..." : "Follow"}
-              </button>
+              </Button>
             )}
-            <button
+            <Button
               className="bg-white border border-green-600 text-green-600 py-2w-full rounded-full font-semibold text-sm shadow hover:bg-green-50 transition"
-              disabled
+              // disabled
+              onClick={handleSendMessage}
             >
               Send Message
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -290,20 +303,24 @@ const ProfilePage = () => {
           All Published Recaps & Photos
         </h3>
         <div className="grid grid-cols-3 gap-3">
-          {profile.photos.map((photo) => (
-            <div
-              key={photo.id}
-              className="aspect-square bg-gray-100 rounded-xl overflow-hidden p-1"
-            >
-              <SmartImage
-                src={photo.url}
-                alt="User photo"
-                width={300}
-                height={300}
-                className="object-cover w-full h-full rounded-lg"
-              />
-            </div>
-          ))}
+          {profile.photos?.length > 0 ? (
+            profile.photos.map((photo) => (
+              <div
+                key={photo.id}
+                className="aspect-square bg-gray-100 rounded-xl overflow-hidden p-1"
+              >
+                <Image
+                  src={photo.url}
+                  alt="User photo"
+                  width={300}
+                  height={300}
+                  className="object-cover w-full h-full rounded-lg"
+                />
+              </div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center text-gray-500">No photos available</div>
+          )}
         </div>
       </div>
     </div>

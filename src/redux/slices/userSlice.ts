@@ -22,7 +22,7 @@ export type Photo = {
 export type Profile = {
   id: string;
   name: string;
-  profilePic: string;
+  profilePic: string | null;
   bio: string;
   email: string;
   homeLocation: HomeLocation;
@@ -35,13 +35,19 @@ export type Profile = {
   isFollowing?: boolean;
 };
 
-
+// Define API response type
+export type ApiResponse = {
+  success: boolean;
+  message: string;
+  data: Profile;
+  error: string | null;
+};
 
 
 interface UserState {
   user: Profile | null;      // logged-in user
   profile: Profile | null;   // another user's profile 
-  // users: Record<string, Profile>;
+
   loading: boolean;
   error: string | null;
   isAuthenticated: boolean;
@@ -62,72 +68,39 @@ const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
-    // logout: (state) => {
-    //   state.user = null;
-    //   state.profile = null;
-    //   state.isAuthenticated = false;
-    //   state.token = null;
-    //   localStorage.removeItem("token");
-    //   localStorage.removeItem("userId");
-    //   localStorage.removeItem("user");
-    // },
+    
      setUser: (state, action: PayloadAction<{ user: Profile; token: string }>) => {
       state.user = action.payload.user;
-      // state.users[action.payload.user.id] = action.payload.user; 
+  
       state.token = action.payload.token;
       state.isAuthenticated = true;
+      console.log("userSlice - setUser:", action.payload.user); // Debug
     },
     clearUser: (state) => {
       state.user = null;
       state.profile = null;
-      // state.users = {};
+    
       state.token = null;
       state.isAuthenticated = false;
     },
-  //   cacheUsers: (state, action: PayloadAction<Profile[]>) => {
-  //     action.payload.forEach((u) => {
-  //       state.users[u.id] = u;
-  //     });
-  // },
-  //  updateUserInCache: (state, action: PayloadAction<Profile>) => {
-  //     state.users[action.payload.id] = {
-  //       ...state.users[action.payload.id],
-  //       ...action.payload,
-  //     };
-  //     if (state.user?.id === action.payload.id) state.user = { ...state.user, ...action.payload };
-  //     if (state.profile?.id === action.payload.id) state.profile = { ...state.profile, ...action.payload };
-  //   },
+ 
   },
   extraReducers: (builder) => {
-    // ✅ Login
-    // builder.addCase(loginUser.pending, (state) => {
-    //   state.loading = true;
-    //   state.error = null;
-    // });
-    // builder.addCase(loginUser.fulfilled, (state, action) => {
-    //   state.loading = false;
-    //   state.user = action.payload.user;
-    //   state.token = action.payload.token;
-    //   state.isAuthenticated = true;
-    // });
-    // builder.addCase(loginUser.rejected, (state, action) => {
-    //   state.loading = false;
-    //   state.error = action.payload as string;
-    // });
-
+    
     // ✅ Fetch Profile
     builder.addCase(fetchProfile.pending, (state) => {
       state.loading = true;
     });
-    builder.addCase(fetchProfile.fulfilled, (state, action) => {
+    builder.addCase(fetchProfile.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
     state.loading = false;
-  if (action.payload) {
-    state.user = action.payload;
-    state.profile = action.payload;
-    //  state.users[action.payload.id] = action.payload; // ✅ cache
-  }
-    // state.user = action.payload;
-    //   state.profile = action.payload;
+  if (action.payload.success) {
+    state.user = action.payload.data;
+    state.profile = action.payload.data;
+     }else {
+        state.error = action.payload.error || "Failed to fetch profile";
+        
+      }
+
     });
     builder.addCase(fetchProfile.rejected, (state, action) => {
       state.loading = false;
@@ -137,10 +110,15 @@ const userSlice = createSlice({
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(fetchUserProfileById.fulfilled, (state, action: PayloadAction<Profile>) => {
+    builder.addCase(fetchUserProfileById.fulfilled, (state, action: PayloadAction<ApiResponse>) => {
       state.loading = false;
-      state.profile = action.payload;
-      //  state.users[action.payload.id] = action.payload; // ✅ cache
+      // state.profile = action.payload;
+      if (action.payload.success) {
+        state.profile = action.payload.data; // Extract data
+      } else {
+        state.error = action.payload.error || "Failed to fetch user profile";
+      }
+      
     });
     builder.addCase(fetchUserProfileById.rejected, (state, action) => {
       state.loading = false;
@@ -150,42 +128,22 @@ const userSlice = createSlice({
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = true;
   }
-  //  if (state.profile?.id === action.payload.id) {
-  //         state.profile.isFollowing = true;
-  //       }
-  //       if (state.users[action.payload.id]) {
-  //         state.users[action.payload.id] = {
-  //           ...state.users[action.payload.id],
-  //           isFollowing: true,
-  //         };
-  //       }
+  
 })  
 .addCase(unfollowUserProfile.fulfilled, (state, action) => {
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = false;
   }
-  //  if (state.profile?.id === action.payload.id) {
-  //         state.profile.isFollowing = false;
-  //       }
-  //       if (state.users[action.payload.id]) {
-  //         state.users[action.payload.id] = {
-  //           ...state.users[action.payload.id],
-  //           isFollowing: false,
-  //         };
-  //       }
+  
 });
     // ✅ Update Profile
-    builder.addCase(updateUserProfile.fulfilled, (state, action) => {
+    builder.addCase(updateUserProfile.fulfilled, (state, action: PayloadAction<Profile>) => {
       state.user = { ...state.user, ...action.payload };
+      if (state.user?.id === state.profile?.id) {
+        state.profile = { ...state.profile, ...action.payload };
+      }
     })
-    // if (state.user?.id === action.payload.id) {
-    //       state.user = { ...state.user, ...action.payload };
-    //     }
-    //     state.users[action.payload.id] = {
-    //       ...state.users[action.payload.id],
-    //       ...action.payload,
-    //     };
-    //   })
+  
       // ✅ Upload profile picture
     builder.addCase(uploadProfilePicture.pending, (state) => {
       state.loading = true;
@@ -193,21 +151,11 @@ const userSlice = createSlice({
     });
     builder.addCase(uploadProfilePicture.fulfilled, (state, action: PayloadAction<Profile>) => {
       state.loading = false;
-      // backend usually returns updated user object
      state.user = { ...state.user, ...action.payload }; // expects user fields
   if (state.user?.id === state.profile?.id) {
     state.profile = state.user;
   }
-  // if (state.user?.id === action.payload.id) {
-  //         state.user = { ...state.user, ...action.payload };
-  //       }
-  //       if (state.profile?.id === action.payload.id) {
-  //         state.profile = { ...state.profile, ...action.payload };
-  //       }
-  //       state.users[action.payload.id] = {
-  //         ...state.users[action.payload.id],
-  //         ...action.payload,
-  //       };
+  
     });
     builder.addCase(uploadProfilePicture.rejected, (state, action) => {
       state.loading = false;

@@ -75,7 +75,7 @@ export const fetchProfile = createAsyncThunk(
         },
       }); 
       console.log(res);
-      return res.data.data;
+      return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data || "Failed to load profile");
     }
@@ -95,7 +95,7 @@ export const fetchUserProfileById = createAsyncThunk(
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      return res.data.data;
+      return res.data;
     } catch (err: any) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch profile");
     }
