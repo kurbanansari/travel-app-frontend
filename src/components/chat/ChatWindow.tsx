@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Input } from "../ui/input";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
-import { fetchConversation, sendMessage } from "@/redux/thunk/chatThunk";
+import { fetchConversation, markMessagesAsRead, sendMessage } from "@/redux/thunk/chatThunk";
 import { Button } from "../ui/button";
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
@@ -21,13 +21,13 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
   const { messages, loading, error, conversations, selectedUser } = useSelector(
     (state: RootState) => state.chat
   );
-  const { user ,profile} = useSelector((state: RootState) => state.user);
+  const { user} = useSelector((state: RootState) => state.user);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [newMessage, setNewMessage] = useState("");
   const myUserId = user?.id 
 
   // Find the other user's profile from selectedUser or conversations
-  const otherUser =
+  const otherUser  =
     selectedUser && selectedUser.id === otherUserId
       ? selectedUser
       : conversations.find((c) => c.otherUser.id === otherUserId)?.otherUser;
@@ -35,6 +35,8 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
   useEffect(() => {
     if (otherUserId) {
       dispatch(fetchConversation({ otherUserId, page: 1, limit: 20 }));
+     dispatch(markMessagesAsRead({ otherUserId }))
+        .unwrap()
     }
   }, [otherUserId, dispatch]);
 
@@ -67,8 +69,8 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
           <Avatar className="w-10 h-10">
             <AvatarImage
                src={otherUser?.profile_pic_url || undefined}
-        alt={otherUser?.name || "User"}
-              className="h-16 flex items-center justify-between px-4 border-b border-emerald-200 bg-emerald-100"
+               alt={otherUser?.name || "User"}
+              className="h-full w-full object-cover border-emerald-200 bg-emerald-100"
             />
           <AvatarFallback>
         {otherUser?.name?.[0] || "?"}
@@ -81,6 +83,8 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
             )}
           </div>
         </div>
+        {/* Mark as Read Button */}
+        
       </div>
 
       {/* Messages area */}

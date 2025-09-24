@@ -118,3 +118,37 @@ export const sendMessage = createAsyncThunk<
     }
   }
 );
+
+export const markMessagesAsRead = createAsyncThunk<
+  void,
+  { otherUserId: string },
+  { state: RootState; rejectValue: string }
+>(
+  "chat/markMessagesAsRead",
+  async ({ otherUserId }, { getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState;
+      const token = state.auth.token || localStorage.getItem("token");
+
+      if (!token) {
+        return rejectWithValue("No token found. Please log in.");
+      }
+
+      await api.put(
+        `/chat/conversation/${otherUserId}/read`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(`Messages marked as read for user ${otherUserId}`);
+    } catch (err: any) {
+      console.error("markMessagesAsRead error:", err);
+      return rejectWithValue(err.response?.data?.message || "Failed to mark messages as read");
+    }
+  }
+);
+
+

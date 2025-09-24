@@ -7,8 +7,9 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
 import Sidebar from "@/components/chat/SideBar";
 import ChatWindow from "@/components/chat/ChatWindow";
-
+import { useParams } from "next/navigation";
 export default function ChatPage() {
+  const params = useParams();
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
 
@@ -35,6 +36,11 @@ export default function ChatPage() {
     handleResize();
     return () => window.removeEventListener("resize", handleResize);
   }, [selectedUserId]);
+  // Sync selectedUserId with URL params
+  useEffect(() => {
+    setSelectedUserId(params.otherUserId as string | null);
+    setIsMobileChatOpen(!!params.otherUserId && window.innerWidth < 640);
+  }, [params.otherUserId]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-50 p-4 sm:p-6 pb-20 sm:pb-24">
