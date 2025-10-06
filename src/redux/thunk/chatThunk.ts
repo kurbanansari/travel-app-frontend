@@ -3,7 +3,12 @@
 // src/redux/thunk/chatThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import api from "@/redux/services/api";
-import { RootState } from "../store";
+
+import { messageReceived } from "../slices/chatSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "@/redux/store";
+
+
 
 interface User {
   id: string;
@@ -18,6 +23,8 @@ interface Message {
   sent_at: string;
   sender: User;
   receiver: User;
+   timestamp: string;
+  read?: boolean;
 }
 
 interface Conversation {
@@ -100,7 +107,7 @@ export const sendMessage = createAsyncThunk<
   { state: RootState; rejectValue: string }
 >(
   "chat/sendMessage",
-  async ({ toUserId, message }, { rejectWithValue }) => {
+  async ({ toUserId, message}, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return rejectWithValue("No token found. Please log in.");
@@ -109,8 +116,9 @@ export const sendMessage = createAsyncThunk<
         { toUserId, message },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("sendMessage response:", res.data);
-      console.log("sendMessage - sender id:", res.data.data.sender.id); // Debug
+      //  dispatch(messageReceived(res.data.data));
+     console.log("sendMessage response:", { data: res.data }); // Line 13: Debug log
+      console.log("sendMessage - sender id:", res.data.data.sender.id);
       return res.data.data;
     } catch (err: any) {
       console.error("sendMessage error:", err);

@@ -2622,3 +2622,8 @@ const handleUnfollow = () => {
 };
 
 export default ProfilePage;
+
+
+
+// io.to(`chat_${fromUserId}`).emit('newMessage', data);
+    // io.to(`chat_${toUserId}`).emit('newMessage', data);
