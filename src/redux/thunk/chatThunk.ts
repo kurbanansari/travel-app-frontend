@@ -160,3 +160,28 @@ export const markMessagesAsRead = createAsyncThunk<
 );
 
 
+export const fetchOnlineUsers = createAsyncThunk(
+  "chat/fetchOnlineUsers",
+  async ({ page = 1, limit = 20 }: { page?: number; limit?: number }, { getState, rejectWithValue }) => {
+    try {
+      // Get token from Redux state
+      const state: any = getState();
+       const token = state.auth.token || localStorage.getItem("token");
+
+      if (!token) return rejectWithValue("No auth token found");
+
+      const response = await api.get(`/chat/online-users?page=${page}&limit=${limit}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  }
+);
+
+

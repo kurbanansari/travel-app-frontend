@@ -18,11 +18,11 @@ export default function Sidebar({ onSelectConversation }: SidebarProps) {
 
 
   return (
-    <div className="w-full md:w-80 border-r bg-white flex flex-col">
+    <div className="w-full flex flex-col h-full overflow-x-hidden">
       {/* Header */}
       <SidebarHeader />
       {/* Search bar */}
-      <div className="px-3 py-2 border-b">
+      <div className="px-3 py-2 border-b w-full overflow-x-hidden">
        <SidebarSearch query={query} setQuery={setQuery}/>
 
         {/* Search results */}
@@ -30,7 +30,9 @@ export default function Sidebar({ onSelectConversation }: SidebarProps) {
       </div>
 
       {/* Conversation list */}
+       <div className="flex-1 w-full overflow-y-auto overflow-x-hidden">
     <ConversationList onSelectConversation={onSelectConversation} />
+  </div>
     </div>
   );
 }

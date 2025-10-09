@@ -22,7 +22,7 @@ export default function ConversationItem({
         onSelectConversation(conversation.otherUser.id);
         //  dispatch(fetchConversation({ otherUserId, page: 1, limit: 20 }));
       }}
-      className={`flex items-center gap-3 px-4 py-3 border-b border-emerald-100 hover:bg-emerald-50 cursor-pointer transition-all duration-200 ${
+      className={`flex overflow-x-hidden w-full items-center gap-3 px-4 py-3 border-b border-emerald-100 hover:bg-emerald-50 cursor-pointer transition-all duration-200 ${
         selectedUser?.id === conversation.otherUser.id ? "bg-emerald-100" : ""
       }`}
     >
@@ -42,8 +42,8 @@ export default function ConversationItem({
       </div>
 
       <div className="flex-1 flex flex-col">
-        <div className="flex items-center">
-          <span className="font-medium text-emerald-900 flex-1">
+        <div className="flex items-center w-full">
+          <span className="font-medium text-emerald-900 flex-1 truncate">
             {conversation.otherUser.name}
           </span>
           {conversation.unreadCount > 0 && (

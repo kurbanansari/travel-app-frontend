@@ -57,7 +57,7 @@ const Footer = () => {
     //     </div>
     //   </CardContent>
     // </Card>
-    <Card className="w-full max-w-xl fixed bottom-6 left-0 right-0 mx-auto bg-white rounded-2xl shadow-xl border border-emerald-100 transition-all duration-300 ease-in-out">
+    <Card className="w-full max-w-xl fixed bottom-1 left-0 right-0 mx-auto bg-white rounded-2xl shadow-xl border border-emerald-100 transition-all duration-300 ease-in-out">
       <CardContent className="p-3 sm:p-4 flex items-center justify-between bg-gradient-to-r from-emerald-50 to-teal-50">
         <div className="flex w-full justify-between items-center gap-2 sm:gap-4">
           {/* Home */}

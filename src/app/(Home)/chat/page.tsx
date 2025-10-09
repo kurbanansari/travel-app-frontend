@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
+import useSocketListeners from "@/hooks/useSocketListeners";
 import { ArrowLeft } from "lucide-react";
 import Sidebar from "@/components/chat/sidebar/SideBar";
 import ChatWindow from "@/components/chat/chatwindow/ChatWindow";
@@ -12,7 +12,10 @@ import { useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 import ChatHeader from "@/components/chat/ChatMainHeader";
+
+
 export default function ChatPage() {
+   useSocketListeners();
   const params = useParams();
 
   const { selectedUser } = useSelector((state: RootState) => state.chat);
@@ -66,13 +69,13 @@ export default function ChatPage() {
        <ChatHeader onBack={handleBack} />
 
         {/* Main Content */}
-        <div className="flex flex-1 flex-col sm:flex-row min-h-[70vh]">
+        <div className="flex flex-1 flex-col sm:flex-row min-h-[70vh] w-full overflow-hidden">
           {/* Sidebar */}
           <div
-            className={`${
-              isMobileChatOpen ? "hidden" : "flex"
-            } sm:flex w-full sm:w-64 bg-emerald-50/50 border-r border-emerald-100 transition-all duration-300 ease-in-out`}
-          >
+           className={`${
+      isMobileChatOpen ? "hidden" : "flex"
+    } sm:flex w-full sm:w-64 flex-shrink-0 bg-emerald-50/50 border-r border-emerald-100 transition-all duration-300 ease-in-out`}
+  >
             <Sidebar onSelectConversation={handleSelectConversation} />
           </div>
 
@@ -80,7 +83,7 @@ export default function ChatPage() {
           <div
             className={`${
               isMobileChatOpen ? "flex" : "hidden"
-            } sm:flex flex-1 bg-white min-h-[60vh] sm:min-h-[70vh] transition-all duration-300 ease-in-out`}
+            } sm:flex flex-1 bg-white min-h-[70vh] sm:min-h-[70vh] transition-all duration-300 ease-in-out`}
           >
             {selectedUserId ? (
               <ChatWindow otherUserId={selectedUserId} key={selectedUserId} />

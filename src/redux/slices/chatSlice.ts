@@ -1,145 +1,17 @@
-// "use client"
 
-// import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-// import { fetchConversation, fetchConversations, markMessagesAsRead, sendMessage } from "../thunk/chatThunk";
-
-// interface User {
-//   id: string;
-//   name: string;
-//   profile_pic_url: string | null;
-//   online?: boolean;
-// }
-
-// interface Message {
-//   id: string;
-//   message: string;
-//   sent_at: string;
-//   sender: User;
-//   receiver: User;
-// }
-
-// interface Conversation {
-//   otherUser: User;
-//   lastMessage: Message | null;
-//   unreadCount: number;
-// }
-
-// interface ChatState {
-//   conversations: Conversation[];
-//   messages: Message[];
-//   selectedUser: User | null;
-//   // selectedUser: Partial<UserListItem> | null;
-//   loading: boolean;
-//   error: string | null;
-// }
-
-// const initialState: ChatState = {
-//   conversations: [],
-//   messages: [],
-//   selectedUser: null,
-//   loading: false,
-//   error: null,
-// };
-
-// const chatSlice = createSlice({
-//   name: "chat",
-//   initialState,
-//   reducers: {
-//     clearConversations: (state) => {
-//       state.conversations = [];
-//       state.error = null;
-//     },
-//     setSelectedUser: (state, action: PayloadAction<User | null>) => {
-//       state.selectedUser = action.payload;
-//       console.log("chatSlice - setSelectedUser:", action.payload); // Debug
-//     },
-//   },
-//   extraReducers: (builder) => {
-//     builder
-//       .addCase(fetchConversations.pending, (state) => {
-//         state.loading = true;
-//         state.error = null;
-//       })
-//       .addCase(fetchConversations.fulfilled, (state, action: PayloadAction<Conversation[]>) => {
-//         state.loading = false;
-//         // Deduplicate conversations in case API still returns duplicates
-//         const uniqueConversations = Array.from(
-//           new Map(action.payload.map((c) => [c.otherUser.id, c])).values()
-//         );
-//         state.conversations = uniqueConversations;
-//       })
-//       .addCase(fetchConversations.rejected, (state, action) => {
-//         state.loading = false;
-//         state.error = action.payload as string;
-//       })
-//       .addCase(fetchConversation.pending, (state) => {
-//         state.loading = true;
-//         state.error = null;
-//       })
-//       .addCase(fetchConversation.fulfilled, (state, action: PayloadAction<Message[]>) => {
-//         state.loading = false;
-//         state.messages = action.payload;
-//       })
-//       .addCase(fetchConversation.rejected, (state, action) => {
-//         state.loading = false;
-//         state.error = action.payload as string;
-//       })
-//       .addCase(sendMessage.pending, (state) => {
-//         state.error = null;
-//       })
-//       .addCase(sendMessage.fulfilled, (state, action: PayloadAction<Message>) => {
-//         state.messages.push(action.payload);
-//         const existingConversation = state.conversations.find(
-//           (c) => c.otherUser.id === action.payload.receiver.id
-//         );
-//         if (existingConversation) {
-//           existingConversation.lastMessage = action.payload;
-//           existingConversation.unreadCount = 0;
-//         } else if (state.selectedUser) {
-//           state.conversations.push({
-//             otherUser: state.selectedUser,
-//             lastMessage: action.payload,
-//             unreadCount: 0,
-//           });
-//         }
-//       })
-//       .addCase(sendMessage.rejected, (state, action) => {
-//         state.error = action.payload as string;
-//       })
-//       .addCase(markMessagesAsRead.pending, (state) => {
-//         state.loading = true;
-//         state.error = null;
-//       })
-//       .addCase(markMessagesAsRead.fulfilled, (state, action) => {
-//         state.loading = false;
-//         // Update unreadCount for the conversation
-//         const otherUserId = action.meta.arg.otherUserId;
-//         const conversation = state.conversations.find((c) => c.otherUser.id === otherUserId);
-//         if (conversation) {
-//           conversation.unreadCount = 0;
-//         }
-//       })
-//       .addCase(markMessagesAsRead.rejected, (state, action) => {
-//         state.loading = false;
-//         state.error = action.payload as string;
-//       });
-//   },
-// });
-
-// export const { clearConversations, setSelectedUser } = chatSlice.actions;
-// export default chatSlice.reducer;
 
 "use client"
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchConversation, fetchConversations, markMessagesAsRead, sendMessage } from "../thunk/chatThunk";
+import { fetchConversation, fetchConversations, fetchOnlineUsers, markMessagesAsRead, sendMessage } from "../thunk/chatThunk";
 // import { setSelected } from "./selectedphotosSlice";
 
 interface User {
   id: string;
   name: string;
   profile_pic_url: string | null;
-  online?: boolean;
+  isOnline?: boolean;
+  lastSeen?: string | null;
 }
 
 export interface Message {
@@ -163,7 +35,9 @@ interface ChatState {
   conversations: Conversation[];
   messages: Message[];
   selectedUser: User | null;
-
+  onlineUsers: any[];
+  loadingOnlineUsers: boolean;
+  errorOnlineUsers: string | null;
   loading: boolean;
   error: string | null;
 }
@@ -172,6 +46,9 @@ const initialState: ChatState = {
   conversations: [],
   messages: [],
  selectedUser: null,
+  onlineUsers: [],
+  loadingOnlineUsers: false,
+  errorOnlineUsers: null,
   loading: false,
   error: null,
 };
@@ -184,6 +61,58 @@ const chatSlice = createSlice({
       state.selectedUser = action.payload;
       state.messages = [];
     },
+     setUserOnline: (state, action: PayloadAction<{ userId: string; online: boolean }>) => {
+      if (action.payload.online) {
+        if (!state.onlineUsers.includes(action.payload.userId))
+          state.onlineUsers.push(action.payload.userId);
+      } else {
+        state.onlineUsers = state.onlineUsers.filter((id) => id !== action.payload.userId);
+      }
+    },
+    updateOnlineStatus: (
+  state,
+  action: PayloadAction<{ userId: string; status: boolean; lastSeen?: string }>
+) => {
+  const { userId, status, lastSeen } = action.payload;
+  const user = state.onlineUsers.find((u) => u.id === userId);
+
+  if (user) {
+    // Only update if status changed
+    if (user.isOnline !== status) {
+      user.isOnline = status;
+      if (!status) user.lastSeen = lastSeen || new Date().toISOString();
+      else user.lastSeen = null;
+    }
+  } else {
+    // Add new user if not exists
+    state.onlineUsers.push({
+      id: userId,
+      name: "Unknown", // replace with API data if available
+      isOnline: status,
+      lastSeen: status ? null : lastSeen || new Date().toISOString(),
+    });
+  }
+},
+    //     updateOnlineStatus: (
+    //   state,
+    //   action: PayloadAction<{ userId: string; status: boolean; lastSeen?: string }>
+    // ) => {
+    //   const { userId, status, lastSeen } = action.payload;
+    //   const user = state.onlineUsers.find((u) => u.id === userId);
+
+    //   if (user) {
+    //     user.isOnline = status;
+    //     if (!status) user.lastSeen = lastSeen || null;
+    //   } else {
+    //     // If user is not in the list, optionally add them
+    //     state.onlineUsers.push({
+    //       id: userId,
+    //       name: "Unknown", // You may replace with actual name if available
+    //       isOnline: status,
+    //       lastSeen: status ? null : lastSeen || null,
+    //     });
+    //   }
+    // },
     setConversations: (state, action: PayloadAction<Conversation[]>) => {
       state.conversations = action.payload;
     },
@@ -203,54 +132,7 @@ const chatSlice = createSlice({
       state.error = null;
     },
      // 🚀 handle incoming socket message
-// messageReceived: (state, action: PayloadAction<Message>) => {
-//       const incoming = action.payload;
 
-      
-//   // 1️⃣ Check for duplicates or temp messages
-//       const index = state.messages.findIndex(
-//         (m) => m.id === incoming.id || (incoming.tempId && m.tempId === incoming.tempId)
-//       );
-
-//   if (index >= 0) {
-//     // Replace temp message with server message
-//     state.messages[index] = incoming;
-//   } else {
-//     // Add new message
-//     state.messages.push(incoming);
-//   }
-
-//       // 2️⃣ Update conversation or create new
-//       const conv = state.conversations.find(
-//         (c) =>
-//           c.otherUser.id === incoming.sender.id ||
-//           c.otherUser.id === incoming.receiver.id
-//       );
-
-//       const otherUser =
-//         incoming.sender.id !== state.selectedUser?.id
-//           ? incoming.sender
-//           : incoming.receiver;
-
-//       if (conv) {
-//         conv.lastMessage = incoming;
-//         if (incoming.sender.id === conv.otherUser.id) {
-//           conv.unreadCount += 1;
-//         }
-//       } else {
-//         state.conversations.push({
-//           otherUser,
-//           lastMessage: incoming,
-//           unreadCount: incoming.sender.id === otherUser.id ? 1 : 0,
-//         });
-//       }
-
-//       // Optional: sort conversations by last message timestamp
-//       state.conversations.sort(
-//         (a, b) =>
-//           (b.lastMessage?.timestamp || 0) - (a.lastMessage?.timestamp || 0)
-//       );
-//     },
 messageReceived: (state, action: PayloadAction<Message>) => {
       const incoming = action.payload;
       console.log("messageReceived:", { id: incoming.id, message: incoming.message, sender: incoming.sender.id, receiver: incoming.receiver.id }); // Line 56: Debug log
@@ -402,10 +284,35 @@ removeMessage: (state, action: PayloadAction<string>) => { // Line 104: Added re
       .addCase(markMessagesAsRead.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
-      });
+      })
+       .addCase(fetchOnlineUsers.fulfilled, (state, action) => {
+        if (!action.payload || !action.payload.users) return;
+
+  const fetchedUsers = action.payload.users;
+
+  // Merge with existing real-time online data
+  const updatedUsers = fetchedUsers.map((user: any) => {
+    const existing = state.onlineUsers.find((u) => u.id === user.id);
+    return {
+      ...user,
+      isOnline: existing ? existing.isOnline : user.isOnline ?? false,
+      lastSeen: existing && existing.isOnline
+        ? null
+        : user.lastSeen ?? new Date().toISOString(),
+    };
+  });
+
+  // Also preserve users who were marked online via socket but not in fetch result
+    const extraOnline = state.onlineUsers.filter(
+      (u) => u.isOnline && !updatedUsers.some((fu:any) => fu.id === u.id)
+     );
+
+      state.onlineUsers = [...updatedUsers, ...extraOnline];
+     });
   },
 });
 
-export const { clearConversations, setSelectedUser,setMessages,clearChat,removeMessage ,setConversations,messageReceived} = chatSlice.actions;
+export const { clearConversations, setSelectedUser,setMessages,updateOnlineStatus,
+  clearChat,setUserOnline,removeMessage ,setConversations,messageReceived} = chatSlice.actions;
 export default chatSlice.reducer;
 

@@ -2,11 +2,12 @@
 
 import { Input } from "../../ui/input";
 import { Button } from "../../ui/button";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { sendMessage } from "@/redux/thunk/chatThunk";
 import { useSocket } from "@/contexts/SocketContext";
+import { Send, Smile, Paperclip } from "lucide-react";
 import { Message, messageReceived, removeMessage } from "@/redux/slices/chatSlice";
 type MessageInputProps = {
   otherUserId: string;
@@ -15,92 +16,20 @@ type MessageInputProps = {
 export default function MessageInput({ otherUserId }: MessageInputProps) {
   const { socket } = useSocket();
   const dispatch = useDispatch<AppDispatch>();
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [newMessage, setNewMessage] = useState("");
     const { user } = useSelector((state: RootState) => state.user);
    
 
-// const handleSend = () => {
-//   if (!newMessage.trim() || !otherUserId) return;
-
-//   const tempId = Date.now().toString();
-
-//   const tempMessage: Message = {
-//     id: tempId,
-//     tempId,
-//     message: newMessage,
-//     sender: { id: user?.id || "", name: user?.name || "You", profile_pic_url: user?.profilePic || null },
-//     receiver: { id: otherUserId, name: "User", profile_pic_url: null },
-//     read: false,
-//     sent_at: new Date().toISOString(),
-//     timestamp: new Date().toISOString(),
-//   };
-
-//   // Emit via socket instead of dispatching directly
-//   socket?.emit("sendMessage", {
-//     toUserId: otherUserId,
-//     message: newMessage,
-//     fromUserId: user?.id,
-//     tempId, // Include tempId for deduplication
-//   });
-
-//   // Optimistic UI update: dispatch temp message
-//   dispatch(messageReceived(tempMessage));
-
-//   // Send to backend via thunk
-//   dispatch(sendMessage({ toUserId: otherUserId, message: newMessage, tempId }));
-
-//   setNewMessage("");
-// };
-
-//  const handleSend = async () => {
-//     if (!newMessage.trim() || !otherUserId) return;
-
-//     // Optimistic message
-//     const tempMessage: Message = {
-//       id: Date.now().toString(),
-//       message: newMessage,
-//       sender: { id: user?.id || "", name: user?.name || "You", profile_pic_url: user?.profilePic || null },
-//       receiver: { id: otherUserId, name: "User", profile_pic_url: null },
-//       read: false,
-//       sent_at: new Date().toISOString(),
-//       timestamp: new Date().toISOString(),
-//     };
-
-//     dispatch(messageReceived(tempMessage));
-
-//     // Emit via socket
-//     socket?.emit("sendMessage", {
-//       toUserId: otherUserId,
-//       message: newMessage,
-//       fromUserId: user?.id,
-//     });
-
-//     // Save to backend
-//     dispatch(sendMessage({ toUserId: otherUserId, message: newMessage }));
-
-//     setNewMessage("");
-//   };
-
-
-  // const handleSend =  () => {
-  //   if (!newMessage.trim() || !otherUserId) return;
-  //    dispatch(
-  //     sendMessage({ toUserId: otherUserId, message: newMessage,tempId })
-  //   ).unwrap();
-  //    // Optionally, immediately update Redux for instant UI
-   
-  //   // Also tell socket user stopped typing
-  //   socket?.emit("typing", { toUserId: otherUserId, isTyping: false });
-  //   setNewMessage("");
-  // };
-
 const handleSend = async () => {
     if (!newMessage.trim() || !otherUserId || !user?.id) return;
-
+   // --- Clear immediately like WhatsApp ---
+    const messageToSend = newMessage;
+    setNewMessage("");
     const tempId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`; // Line 21: Temporary id for optimistic update
     const tempMessage: Message = {
       id: tempId,
-      message: newMessage,
+      message: messageToSend,
       sender: { id: user.id, name: user.name || "You", profile_pic_url: user.profilePic || null },
       receiver: { id: otherUserId, name: "User", profile_pic_url: null },
       read: false,
@@ -136,32 +65,54 @@ const handleSend = async () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setNewMessage(value);
+if (!user?.id || !otherUserId) return;
+    
 
-    // emit typing event
-   socket?.emit("typing", {
-    userId: user?.id,
-    toUserId: otherUserId,
-    isTyping: value.length > 0,
-  });
+    const isTyping = value.length > 0;
+    console.log("Emitting typing event:", { userId: user.id, toUserId: otherUserId, isTyping }); // Line 59: Debug log
+    socket?.emit("typing", {
+      userId: user.id,
+      toUserId: otherUserId,
+      isTyping,
+    });
+   
+  // Stop typing 2s after user stops typing
+if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+if (isTyping) {
+  typingTimeoutRef.current = setTimeout(() => {
+    socket?.emit("typing", { userId: user.id, toUserId: otherUserId, isTyping: false }); // added userId
+  }, 2000);
+}
   };
 
   return (
-    <div className="p-3 border-t bg-white flex items-center">
-      <Input
-        type="text"
-        placeholder="Type a message"
-         autoComplete="off"
-        value={newMessage}
-        onChange={handleChange}
-        name="chatMessage"
-        className="flex-1 border border-emerald-200 rounded-full px-4 py-2 focus:ring-2 focus:ring-emerald-400 outline-none transition-all duration-200"
-        onKeyDown={(e) => e.key === "Enter" && handleSend()}
-      />
+
+    <div className="w-full bg-white overflow-hidden  px-1 flex items-center gap-1">
+
+    
+
+      {/* Message Input */}
+      <div className="flex-1 relative">
+        <Input
+          type="text"
+          placeholder="Type a message"
+          value={newMessage}
+          onChange={handleChange}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
+          spellCheck={false}
+          autoComplete="off"
+          name="chatMessage"
+          className="w-full rounded-full border border-gray-200 bg-gray-100 px-4 py-2 pr-10 focus:ring-2 focus:ring-emerald-400 focus:bg-white transition-all duration-200 outline-none text-sm"
+        />
+      </div>
+
+      {/* Send Button (icon like WhatsApp) */}
       <Button
         onClick={handleSend}
-        className="ml-2 bg-emerald-500 text-white px-4 py-2 rounded-full hover:bg-emerald-600 transition-all duration-200 hover:scale-105"
+        size="icon"
+        className="rounded-full bg-emerald-500 text-white hover:bg-emerald-600 transition-all duration-200 hover:scale-110 shadow-md"
       >
-        Send
+        <Send size={20} className="rotate-45" /> 
       </Button>
     </div>
   );
