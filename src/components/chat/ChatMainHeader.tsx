@@ -2,18 +2,20 @@
 
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 type ChatHeaderProps = {
   onBack: () => void;
 };
 
 export default function ChatHeader({ onBack }: ChatHeaderProps) {
+  const router = useRouter()
   return (
     <div className="flex items-center p-3 bg-gradient-to-r from-emerald-100 to-teal-100 border-b border-emerald-200">
       <Button
         variant="ghost"
         size="icon"
-        onClick={onBack}
+         onClick={() => router.back()}
         className="text-emerald-800 hover:bg-emerald-200/50 rounded-full transition-all duration-200 ease-in-out hover:scale-110"
         aria-label="Back to conversations"
       >
