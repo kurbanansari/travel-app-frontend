@@ -10,7 +10,7 @@ import {
   fetchOnlineUsers,
   markMessagesAsRead,
 } from "@/redux/thunk/chatThunk";
-import { messageReceived,Message, updateOnlineStatus } from "@/redux/slices/chatSlice";
+import { messageReceived,Message, updateOnlineStatus, setSelectedUser } from "@/redux/slices/chatSlice";
 import { useSocket } from "@/contexts/SocketContext";
 
 import ChatHeader from "./ChatHeader";
@@ -45,7 +45,7 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
   // -----------------------------
   useEffect(() => {
     if (!socket || !otherUserId) return;
-
+console.log("Joining room for:", user?.id, otherUserId);
     socket.emit("subscribeToChat", otherUserId);
     socket.emit("markMessageRead", { otherUserId });
 
@@ -70,20 +70,7 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
   }
 };
    
-    //  const handleUserStatusChanged = ({
-    //   userId,
-    //   status,
-    //   timestamp,
-    // }: {
-    //   userId: string;
-    //   status: boolean;
-    //   timestamp: string;
-    // }) => {
-    //   dispatch({
-    //     type: "chat/updateOnlineStatus",
-    //     payload: { userId, status, lastSeen: timestamp },
-    //   });
-    // };
+   
      const handleUserStatus = (data: { userId: string; status: boolean; timestamp: string }) => {
     console.log("📡 userStatusChanged:", data);
     dispatch(updateOnlineStatus({ 
@@ -118,12 +105,25 @@ export default function ChatWindow({ otherUserId }: ChatWindowProps) {
   const fetchedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     if (!otherUserId) return;
-
+   dispatch(setSelectedUser({
+    id: otherUserId,
+    name: selectedUser?.name || "Unknown",
+    profile_pic_url: selectedUser?.profile_pic_url || null,
+  })); 
     if (!fetchedRef.current.has(otherUserId)) {
       dispatch(fetchConversation({ otherUserId, page: 1, limit: 20 }));
       fetchedRef.current.add(otherUserId);
     }
   }, [otherUserId, dispatch]);
+
+// useEffect(() => {
+//   if (!otherUserId) return;
+//   const userToSet = selectedUser?.id === otherUserId
+//     ? selectedUser
+//     : { id: otherUserId, name: selectedUser?.name || "Unknown", profile_pic_url: selectedUser?.profile_pic_url || null };
+
+//   dispatch(setSelectedUser(userToSet));
+// }, [otherUserId, selectedUser, dispatch]);
 
   // -----------------------------
   // Mark unread messages as read whenever messages update

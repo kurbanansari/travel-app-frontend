@@ -9,18 +9,26 @@ import Sidebar from "@/components/chat/sidebar/SideBar";
 import ChatWindow from "@/components/chat/chatwindow/ChatWindow";
 import { useParams } from "next/navigation";
 
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import ChatHeader from "@/components/chat/ChatMainHeader";
+import { RootState, AppDispatch } from "@/redux/store";
 
+import ChatHeader from "@/components/chat/ChatMainHeader";
+import { useSelector, useDispatch } from "react-redux";
+import { setCurrentUserId } from "@/redux/slices/chatSlice";
 
 export default function ChatPage() {
    useSocketListeners();
   const params = useParams();
-
+    const dispatch = useDispatch<AppDispatch>();
   const { selectedUser } = useSelector((state: RootState) => state.chat);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isMobileChatOpen, setIsMobileChatOpen] = useState(false);
+ const { user } = useSelector((state: RootState) => state.user);
+ // 1️⃣ Set currentUserId in chatSlice when user loads
+  useEffect(() => {
+    if (user?.id) {
+      dispatch(setCurrentUserId(user.id));
+    }
+  }, [user, dispatch]);
 
   // Sync local state with Redux selectedUser
   useEffect(() => {

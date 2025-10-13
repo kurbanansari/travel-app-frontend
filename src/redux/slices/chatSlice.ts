@@ -3,7 +3,8 @@
 "use client"
 
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { fetchConversation, fetchConversations, fetchOnlineUsers, markMessagesAsRead, sendMessage } from "../thunk/chatThunk";
+import { blockUser, clearChatHistory, deleteMessage, fetchConversation, fetchConversations, fetchOnlineUsers, 
+  markMessagesAsRead, sendMessage, unblockUser } from "../thunk/chatThunk";
 // import { setSelected } from "./selectedphotosSlice";
 
 interface User {
@@ -23,6 +24,7 @@ export interface Message {
    timestamp: string | any;
   read?: boolean;
    tempId?: string;
+   isTemporary?: boolean;
 }
 
 interface Conversation {
@@ -32,6 +34,8 @@ interface Conversation {
 }
 
 interface ChatState {
+   blockedUsers: string[];
+   currentUserId: string | null;
   conversations: Conversation[];
   messages: Message[];
   selectedUser: User | null;
@@ -43,6 +47,8 @@ interface ChatState {
 }
 
 const initialState: ChatState = {
+  currentUserId: null,
+  blockedUsers: [],
   conversations: [],
   messages: [],
  selectedUser: null,
@@ -57,9 +63,13 @@ const chatSlice = createSlice({
   name: "chat",
   initialState,
   reducers: {
+
+    setCurrentUserId: (state, action: PayloadAction<string>) => {
+  state.currentUserId = action.payload;
+},
     setSelectedUser: (state, action: PayloadAction<User | null>) => {
       state.selectedUser = action.payload;
-      state.messages = [];
+      // state.messages = [];
     },
      setUserOnline: (state, action: PayloadAction<{ userId: string; online: boolean }>) => {
       if (action.payload.online) {
@@ -134,11 +144,9 @@ const chatSlice = createSlice({
      // 🚀 handle incoming socket message
 
 messageReceived: (state, action: PayloadAction<Message>) => {
-      const incoming = action.payload;
-      console.log("messageReceived:", { id: incoming.id, message: incoming.message, sender: incoming.sender.id, receiver: incoming.receiver.id }); // Line 56: Debug log
+  const incoming = action.payload;
 
-      // Deduplicate by id or content+sender+receiver+timestamp
-      const index = state.messages.findIndex(
+     const index = state.messages.findIndex(
         (m) =>
           m.id === incoming.id ||
           (m.message === incoming.message &&
@@ -163,7 +171,8 @@ messageReceived: (state, action: PayloadAction<Message>) => {
   );
 
   const otherUser =
-    incoming.sender.id !== state.selectedUser?.id
+    incoming.sender.id !== state.currentUserId
+    //  incoming.sender.id !== state.user?.id
       ? incoming.sender
       : incoming.receiver;
 
@@ -217,7 +226,8 @@ removeMessage: (state, action: PayloadAction<string>) => { // Line 104: Added re
       })
       .addCase(fetchConversation.fulfilled, (state, action: PayloadAction<Message[]>) => {
         state.loading = false;
-        // state.messages = action.payload;
+        
+        state.messages = action.payload;
         const uniqueMessages = Array.from(new Map(action.payload.map(m => [m.id, m])).values()); // Line 116: Deduplicate by id
         state.messages = uniqueMessages;
       })
@@ -229,9 +239,8 @@ removeMessage: (state, action: PayloadAction<string>) => { // Line 104: Added re
         state.error = null;
       })
       .addCase(sendMessage.fulfilled, (state, action: PayloadAction<Message>) => {
-      
-      console.log("sendMessage.fulfilled:", { id: action.payload.id, message: action.payload.message, sender: action.payload.sender.id, receiver: action.payload.receiver.id }); // Line 125: Debug log
-        const index = state.messages.findIndex(
+
+         const index = state.messages.findIndex(
           (m) =>
             m.id === action.payload.id ||
             (m.message === action.payload.message &&
@@ -254,7 +263,7 @@ removeMessage: (state, action: PayloadAction<string>) => { // Line 104: Added re
             c.otherUser.id === action.payload.receiver.id
         );
         const otherUser =
-          action.payload.sender.id !== state.selectedUser?.id
+          action.payload.sender.id !== state.currentUserId
             ? action.payload.sender
             : action.payload.receiver;
         if (conv) conv.lastMessage = action.payload;
@@ -308,11 +317,60 @@ removeMessage: (state, action: PayloadAction<string>) => { // Line 104: Added re
      );
 
       state.onlineUsers = [...updatedUsers, ...extraOnline];
-     });
+     })
+     .addCase(clearChatHistory.fulfilled, (state,action) => {
+        state.loading = false;
+    
+        state.messages = [];
+       
+   
+      })
+      .addCase(blockUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(blockUser.fulfilled, (state, action) => {
+        state.loading = false;
+         state.blockedUsers.push(action.meta.arg.userId);
+      })
+      .addCase(blockUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // 🔓 Unblock user
+      .addCase(unblockUser.pending, (state) => {
+       state.loading = true;
+      state.error = null;
+        })
+      .addCase(unblockUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.blockedUsers = state.blockedUsers.filter(
+        (id) => id !== action.meta.arg.userId
+      );
+      })
+      .addCase(unblockUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      // 🧨 DELETE MESSAGE
+.addCase(deleteMessage.pending, (state) => {
+  state.loading = true;
+  state.error = null;
+})
+.addCase(deleteMessage.fulfilled, (state, action) => {
+  state.loading = false;
+  // remove the message from message list
+  state.messages = state.messages.filter((msg) => msg.id !== action.payload);
+})
+.addCase(deleteMessage.rejected, (state, action) => {
+  state.loading = false;
+  state.error = action.payload as string;
+});
+
   },
 });
 
-export const { clearConversations, setSelectedUser,setMessages,updateOnlineStatus,
+export const { clearConversations, setSelectedUser,setMessages,updateOnlineStatus,setCurrentUserId,
   clearChat,setUserOnline,removeMessage ,setConversations,messageReceived} = chatSlice.actions;
 export default chatSlice.reducer;
 

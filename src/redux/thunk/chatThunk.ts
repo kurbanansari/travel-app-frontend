@@ -184,4 +184,123 @@ export const fetchOnlineUsers = createAsyncThunk(
   }
 );
 
+// Clear all chat history
+// export const clearChatHistory = createAsyncThunk(
+//   "chat/clearHistory",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       const token = localStorage.getItem("token"); // if you need auth
+//       const response = await api.delete(`/chat/clear-history`,
+//         {
+//           headers: {
+//             "Content-Type": "application/json",
+//             Authorization: `Bearer ${token}`,
+//           },
+//           data: {
+//             confirmation: "DELETE_ALL_MESSAGES",
+//           },
+//         }
+//       );
+//       return response.data;
+//     } catch (err: any) {
+//       return rejectWithValue(err.response?.data || err.message);
+//     }
+//   }
+// );
+
+export const clearChatHistory = createAsyncThunk(
+  "chat/clearChatHistory",
+  async ({ otherUserId }: { otherUserId: string }, { rejectWithValue, getState }) => {
+    try {
+      const token = (getState() as RootState).auth.token;
+      const response = await fetch("http://localhost:8080/chat/clear-history", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          confirmation: "DELETE_ALL_MESSAGES",
+          otherUserId, // ✅ Send this
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to clear chat history");
+      return data;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+
+export const blockUser = createAsyncThunk(
+  "chat/blockUser",
+  async ({ userId }: { userId: string }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Missing auth token");
+
+      const response = await api.post(`/chat/block/${userId}`,{}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  console.log(response)
+      return response.data.data; // blockedUserId, blockedAt
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+
+export const unblockUser = createAsyncThunk(
+  "chat/unblockUser",
+  async ({ userId }: { userId: string }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Missing auth token");
+
+      const response = await api.delete(`/chat/block/${userId}`,{
+        headers: { Authorization: `Bearer ${token}` },
+      });
+  console.log(response)
+      return response.data.data; // blockedUserId, blockedAt
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+// 🧨 DELETE MESSAGE
+export const deleteMessage = createAsyncThunk<
+  string, // ✅ return deleted messageId
+  { messageId: string },
+  { rejectValue: string }
+>(
+  "chat/deleteMessage",
+  async ({ messageId }, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Missing auth token");
+
+      const response = await api.delete(`/chat/message/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message || "Failed to delete message");
+      }
+
+      console.log("✅ Message deleted:", messageId);
+      return messageId; // return the deleted message id
+    } catch (error: any) {
+      console.error("❌ deleteMessage error:", error);
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
+
+
 

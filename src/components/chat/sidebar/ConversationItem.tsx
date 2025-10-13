@@ -14,7 +14,11 @@ export default function ConversationItem({
   showMarkAsRead,
 }: any) {
   const dispatch = useDispatch();
-
+  //  const displayUser = conversation.otherUser;
+const displayUser =
+    selectedUser?.id === conversation.otherUser.id
+      ? selectedUser
+      : conversation.otherUser;
   return (
     <div
       onClick={() => {
@@ -23,20 +27,20 @@ export default function ConversationItem({
         //  dispatch(fetchConversation({ otherUserId, page: 1, limit: 20 }));
       }}
       className={`flex overflow-x-hidden w-full items-center gap-3 px-4 py-3 border-b border-emerald-100 hover:bg-emerald-50 cursor-pointer transition-all duration-200 ${
-        selectedUser?.id === conversation.otherUser.id ? "bg-emerald-100" : ""
+        selectedUser?.id === displayUser.id ? "bg-emerald-100" : ""
       }`}
     >
       <div className="relative">
         <Avatar className="w-10 h-10">
           <AvatarImage
-            src={conversation.otherUser.profile_pic_url || undefined}
-            alt={conversation.otherUser.name}
+            src={displayUser.profile_pic_url || undefined}
+            alt={displayUser.name}
           />
           <AvatarFallback>
-            {conversation.otherUser.name?.[0] || "?"}
+            {displayUser.name?.[0] || "?"}
           </AvatarFallback>
         </Avatar>
-        {conversation.otherUser.online && (
+        {displayUser.online && (
           <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full" />
         )}
       </div>
@@ -44,14 +48,14 @@ export default function ConversationItem({
       <div className="flex-1 flex flex-col">
         <div className="flex items-center w-full">
           <span className="font-medium text-emerald-900 flex-1 truncate">
-            {conversation.otherUser.name}
+            {displayUser.name}
           </span>
           {conversation.unreadCount > 0 && (
             <span
               className="text-xs bg-emerald-500 text-white rounded-full px-2 py-1 cursor-pointer"
               onClick={(e) => {
                 e.stopPropagation();
-                onToggleMarkAsRead(conversation.otherUser.id);
+                onToggleMarkAsRead(displayUser.id);
               }}
             >
               {conversation.unreadCount}
@@ -62,12 +66,12 @@ export default function ConversationItem({
           {conversation.lastMessage?.message || "No messages yet"}
         </p>
 
-        {showMarkAsRead === conversation.otherUser.id && (
+        {showMarkAsRead === displayUser.id && (
           
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              onMarkAsRead(conversation.otherUser.id);
+              onMarkAsRead(displayUser.id);
             }}
             disabled={conversation.unreadCount === 0}
             className={`

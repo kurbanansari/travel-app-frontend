@@ -4,9 +4,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import { useRouter } from "next/navigation";
 import User from "@/redux/slices/chatSlice";
 import { useSelector, useDispatch } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { RootState, AppDispatch } from "@/redux/store";
-import { fetchOnlineUsers } from "@/redux/thunk/chatThunk";
+import { blockUser, clearChatHistory, fetchOnlineUsers, unblockUser } from "@/redux/thunk/chatThunk";
 
 type ChatHeaderProps = {
   otherUserId: string;
@@ -17,24 +17,42 @@ type ChatHeaderProps = {
 export default function ChatHeader({ otherUserId,isOnline,lastSeen }: ChatHeaderProps) {
   const router = useRouter();
    const dispatch = useDispatch<AppDispatch>();
-  const { selectedUser,onlineUsers } = useSelector((state: RootState) => state.chat);
-  
+  const { selectedUser,onlineUsers,loading,error ,blockedUsers} = useSelector((state: RootState) => state.chat);
+   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+    const isBlocked = blockedUsers.includes(otherUserId);
+useEffect(() => {
+  const handleClickOutside = (event: MouseEvent) => {
+    if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      setMenuOpen(false);
+    }
+  };
+  document.addEventListener("mousedown", handleClickOutside);
+  return () => document.removeEventListener("mousedown", handleClickOutside);
+}, []);
 
+const handleClearChat = () => {
+  // Directly call the API
+  dispatch(clearChatHistory({otherUserId})); // pass userId if needed in backend
+  setMenuOpen(false);
+};
+// const handleBlockUser = () => {
+//   dispatch(blockUser({ userId: otherUserId }));
+//   setMenuOpen(false);
+// };
+
+
+  const handleBlockToggle = () => {
+    if (isBlocked) {
+      dispatch(unblockUser({ userId:otherUserId }));
+    } else {
+      dispatch(blockUser({ userId:otherUserId }));
+    }
+    setMenuOpen(false);
+  };
 
   // Get the specific user from onlineUsers
   const userStatus = onlineUsers.find((u) => u.id === otherUserId);
-  console.log(userStatus)
-// const isOnline = userStatus?.isOnline ?? false;
-// const lastSeen = userStatus?.lastSeen ?? null;
-
-  // Format last seen text
-
-  const lastSeenText = lastSeen
-    ? `Last seen at ${new Date(lastSeen).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
-    : "";
-
-
-
 
   return (
     <div className="h-12 flex items-center justify-between px-4 border-b border-emerald-200 bg-emerald-100">
@@ -52,7 +70,7 @@ export default function ChatHeader({ otherUserId,isOnline,lastSeen }: ChatHeader
         </Avatar>
         <div>
           <span className="font-semibold text-emerald-900">
-            {selectedUser?.name || "Unknown"}
+            {selectedUser?.name || "?"}
           </span>
           {isOnline ? (
             <span className="block text-xs text-emerald-500">Online</span>
@@ -63,6 +81,43 @@ export default function ChatHeader({ otherUserId,isOnline,lastSeen }: ChatHeader
           )}
         </div>
       </div>
+       {/* Vertical 3-dot menu */}
+      <div className="relative" ref={menuRef}>
+        <button
+          className="p-2 rounded hover:bg-emerald-200"
+          onClick={() => setMenuOpen((prev) => !prev)}
+        >
+          <span className="block w-1 h-1 bg-emerald-900 rounded-full mb-1"></span>
+          <span className="block w-1 h-1 bg-emerald-900 rounded-full mb-1"></span>
+          <span className="block w-1 h-1 bg-emerald-900 rounded-full"></span>
+        </button>
+
+        {/* Dropdown */}
+        {menuOpen && (
+          <div className="absolute right-0 mt-2 w-50 bg-white border border-gray-200 rounded shadow-lg z-50">
+            <button
+              className="w-full text-sm text-left px-4 py-2 hover:bg-gray-100 text-green-600"
+              onClick={handleClearChat}
+              disabled={loading}
+            >
+              {loading ? "Clearing..." : "Clear Chat History"}</button>
+           <button
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-100 text-red-600"
+              onClick={handleBlockToggle}
+              disabled={loading}
+            >
+              {loading
+                ? "Processing..."
+                : isBlocked
+                ? "Unblock User"
+                : "Block User"}
+            </button>
+            {error && <p className="px-4 py-1 text-xs text-red-500">{error}</p>}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+

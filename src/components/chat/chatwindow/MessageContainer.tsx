@@ -5,6 +5,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { useSocket } from "@/contexts/SocketContext";
 import { motion, AnimatePresence } from "framer-motion";
+import { deleteMessage } from "@/redux/thunk/chatThunk";
+import { Trash2 } from "lucide-react";
 
 
 type ChatMessageProps = {
@@ -23,10 +25,15 @@ export default function MessageContainer({otherUserId ,isTyping}: ChatMessagePro
   const { user} = useSelector((state: RootState) => state.user);
    
     const myUserId = user?.id 
+ const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
 
+ if (!selectedUser?.id) return <div>Select a user to chat</div>;
 
-
-  
+  const filteredMessages = messages.filter(
+  (msg) =>
+    (msg.sender.id === otherUserId  && msg.receiver.id === myUserId) ||
+    (msg.sender.id === myUserId && msg.receiver.id === otherUserId )
+);
   // useEffect(() => {
   //   bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   // }, [messages,isTyping]);
@@ -40,20 +47,30 @@ export default function MessageContainer({otherUserId ,isTyping}: ChatMessagePro
     }
   }
 }, [messages, isTyping]);
-console.log("MessageContainer render:", { messages: messages.length, isTyping });
+console.log("MessageContainer render:", { messages: filteredMessages.length, isTyping });
 
+ const handleDelete = (messageId: string) => {
+    dispatch(deleteMessage({ messageId }));
+    setSelectedMessageId(null); // hide trash icon after delete
+  };
+
+  const handleMessageClick = (messageId: string) => {
+    setSelectedMessageId((prev) => (prev === messageId ? null : messageId)); // toggle icon
+  };
   return (
-    <div className="flex flex-1 flex-col space-y-3 overflow-y-auto w-full py-2 px-4">
-     {messages.map((msg,index) => (
+    <div 
+        //  ref={containerRef}
+    className="flex flex-1 flex-col space-y-3 overflow-y-auto w-full py-2 px-4 overflow-x-hidden">
+     {filteredMessages.map((msg,index) => (
           <div
-           
-            key={msg.id || `${msg.message}-${msg.sender.id}-${msg.sent_at}-${index}`}// Line
-            className={`flex ${
+          key={msg.id || index}
+          onClick={() => msg.sender.id === myUserId && handleMessageClick(msg.id)}
+          className={`flex ${
               msg.sender.id === myUserId ? "justify-end" : "justify-start"
             }`}
           >
             <div
-            className={`px-4 py-2 rounded-2xl
+            className={`px-4 py-2 rounded-2xl relative
                 bg-${msg.sender.id === myUserId ? "emerald-500 text-white" : "gray-100 text-black"}
                 break-words whitespace-pre-wrap
                 max-w-full
@@ -67,18 +84,21 @@ console.log("MessageContainer render:", { messages: messages.length, isTyping })
                   minute: "2-digit",
                 })}
             </span>
-           
+          {/* 👈 Show trash icon only if this message is selected */}
+            {msg.sender.id === myUserId && selectedMessageId === msg.id && (
+              <button
+                className="absolute top-0 right-1 text-red-500 hover:text-red-700 z-10"
+                onClick={() => handleDelete(msg.id)}
+                disabled={loading}
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
       ))}
       
-     {/* {isTyping && (
-        <div className="italic text-gray-500 text-sm px-4 py-2 self-start rounded-xl bg-gray-200">
-          Typing...
-        </div>
-      )} */}
-
-      
+    
       {/* ✅ Modern WhatsApp-style typing indicator */}
       <AnimatePresence>
         {isTyping && (
