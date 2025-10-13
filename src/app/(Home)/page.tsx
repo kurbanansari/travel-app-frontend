@@ -9,22 +9,22 @@ import { updateFeedItem, FeedItem } from "@/redux/slices/feedSlice";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import Header from "@/components/Header";
+import { useRouter } from "next/navigation";
+import { LuMessageCircleMore } from "react-icons/lu";
 
 import PostCard from "@/components/ui/PostCard";
 
-
-
-
-
 const FeedPage = () => {
   const dispatch = useDispatch<AppDispatch>();
- 
-  const { items: feed, loading, error, pagination } = useSelector(
-    (state: RootState) => state.feed
-  );
-  
+  const router = useRouter();
+  const {
+    items: feed,
+    loading,
+    error,
+    pagination,
+  } = useSelector((state: RootState) => state.feed);
+
   const hasFetched = useRef(false);
-  
 
   const handleItemUpdate = (updatedItem: FeedItem) => {
     dispatch(updateFeedItem(updatedItem));
@@ -32,12 +32,11 @@ const FeedPage = () => {
 
   useEffect(() => {
     // ✅ Only fetch if we haven't fetched before AND feed is empty
-      if (!hasFetched.current && feed.length === 0) {
+    if (!hasFetched.current && feed.length === 0) {
       dispatch(fetchFeed({ page: 1, limit: 10 }));
       hasFetched.current = true;
     }
   }, [dispatch, feed.length]);
-  
 
   const handleLoadMore = () => {
     if (pagination && pagination.page < pagination.totalPages) {
@@ -47,9 +46,9 @@ const FeedPage = () => {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-br bg-green-50 px-2 sm:px-4">
-      <Card className="w-full max-w-xl mt-6 mb-20 shadow-lg rounded-2xl border bg-green-100">
+      <Card className="w-full max-w-xl mt-6 mb-20 shadow-lg rounded-2xl border bg-green-100 relative">
         <Header />
-        <main className="w-full max-w-xl mx-auto pt-3 pb-3  sm:px-0">
+        <main className="w-full max-w-xl mx-auto pt-3 pb-3  sm:px-0 relative">
           {loading && (
             <div className="p-6 space-y-6">
               {/* Header skeleton */}
@@ -72,27 +71,13 @@ const FeedPage = () => {
               </div>
             </div>
           )}
-          {/* {error && (
-        <div className="text-center text-red-500 mt-8">
-          {error}
-          {!token && (
-            <div className="mt-4">
-              <Link
-                href="/login"
-                className="bg-blue-500 text-white px-4 py-2 rounded-full font-medium text-sm hover:bg-blue-600 transition"
-              >
-                Go to Login
-              </Link>
-            </div>
-          )}
-        </div>
-      )} */}
+
           {!loading && !error && feed.length === 0 && (
             <div className="text-center text-gray-500 mt-8">
               No posts found.
             </div>
           )}
-          <div className="flex flex-col gap-4 ml-2 mr-2">
+          <div className="flex flex-col gap-4 ml-2 mr-2 relative">
             {feed &&
               feed?.map((item) => (
                 <PostCard
@@ -102,6 +87,8 @@ const FeedPage = () => {
                 />
               ))}
           </div>
+        
+
           {/* ✅ Load more button */}
           {pagination && pagination.page < pagination.totalPages && (
             <div className="flex justify-center mt-4">
@@ -114,8 +101,19 @@ const FeedPage = () => {
             </div>
           )}
         </main>
-        
       </Card>
+        <div className="fixed bottom-20 right-70 z-50">
+            <button
+              className="w-14 h-14 bg-emerald-500 rounded-full shadow-lg flex items-center justify-center hover:bg-emerald-600 transition"
+              onClick={
+                () =>
+                  router.push("/chat") /* Add your open chat handler here */
+              }
+            >
+              {/* Use any icon, e.g., Chat icon from lucide-react */}
+             <LuMessageCircleMore size={30} color="white"/>
+            </button>
+          </div>
     </div>
   );
 };
