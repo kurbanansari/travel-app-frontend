@@ -1,6 +1,6 @@
 // redux/animationSlice.ts
-import { createSlice } from "@reduxjs/toolkit";
-import { createAnimation } from "@/redux/thunk/animationThunk";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createAnimation, publishAnimation } from "@/redux/thunk/animationThunk";
 import { animationStyles , animationMusic ,animationStatus} from "@/redux/thunk/animationThunk";
 
 
@@ -15,6 +15,8 @@ type AnimationStyle = {
 
 interface AnimationState {
     styles: AnimationStyle[];
+    data: any | null;
+     successMessage: string | null;
     status: string | null;
       music: any[];
         videoUrl: string | null;
@@ -25,6 +27,8 @@ interface AnimationState {
 }
 
 const initialState: AnimationState = {
+   data: null,
+   successMessage: null,
    styles: [],
      music: [],
      status: null,
@@ -45,6 +49,12 @@ const animationSlice = createSlice({
       state.error = null;
       state.loading = false;
        state.videoUrl = null;
+    },
+     resetPublishState(state) {
+      state.loading = false;
+      state.error = null;
+      state.successMessage = null;
+      state.data = null;
     },
   },
   extraReducers: (builder) => {
@@ -97,23 +107,39 @@ const animationSlice = createSlice({
     state.error = null;
   })
   .addCase(animationStatus.fulfilled, (state, action) => {
-        state.loading = false; // ✅ must stop loading
-  const status = action.payload.status;
-  state.status = status;
+  
+  state.loading = false;
+  const backendStatus = action.payload.data?.status; // e.g., "COMPLETED"
+  state.status = backendStatus;
 
-  if (status === "ready" && state.animationId) {
-    state.videoUrl = `http://localhost:8080/animations/${state.animationId}.mp4`;
-  } else if (status === "failed") {
+  if (backendStatus === "COMPLETED") {
+    state.videoUrl = action.payload.data?.video_url || null;
+  } else if (backendStatus === "FAILED") {
     state.error = "Animation generation failed.";
     state.videoUrl = null;
   }
 })
+
 .addCase(animationStatus.rejected, (state, action) => {
   state.loading = false;
   state.error = action.payload as string;
-});
+})
+ .addCase(publishAnimation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        
+      })
+      .addCase(publishAnimation.fulfilled, (state, action: PayloadAction<any>) => {
+        state.loading = false;
+        state.successMessage = action.payload.message || "Animation published successfully";
+        state.data = action.payload.data || null;
+      })
+      .addCase(publishAnimation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string || "Failed to publish animation";
+      });
 },
 });
 
-export const { resetAnimation } = animationSlice.actions;
+export const { resetAnimation ,resetPublishState} = animationSlice.actions;
 export default animationSlice.reducer;

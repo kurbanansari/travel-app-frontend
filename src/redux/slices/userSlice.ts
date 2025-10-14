@@ -2,6 +2,7 @@
 import { createSlice , PayloadAction  } from "@reduxjs/toolkit";
 import{  updateUserProfile, fetchUserProfileById, fetchProfile, uploadProfilePicture } from "../thunk/userThunk";
 import { followUserProfile, unfollowUserProfile } from "../thunk/feedThunk";
+import { Photo } from "./photoSlice";
 // ✅ Types
 export type HomeLocation = {
   id: string;
@@ -14,7 +15,12 @@ export type HomeLocation = {
   lng: number;
 };
 
-export type Photo = {
+// export type Photo = {
+//   id: string;
+//   url: string;
+// };
+
+export type Video = {
   id: string;
   url: string;
 };
@@ -32,6 +38,8 @@ export type Profile = {
   totalDistanceKm: number;
   daysSpentTraveling: number;
   photos: Photo[];
+  videos: Video[];
+  
   isFollowing?: boolean;
 };
 
@@ -82,6 +90,13 @@ const userSlice = createSlice({
     
       state.token = null;
       state.isAuthenticated = false;
+    },
+    removeProfilePhoto(state, action: PayloadAction<string>) {
+      if (state.profile?.photos) {
+        state.profile.photos = state.profile.photos.filter(
+          (p: any) => p.id !== action.payload
+        );
+      }
     },
  
   },
@@ -164,5 +179,5 @@ const userSlice = createSlice({
   },
 });
 
-export const {  setUser , clearUser } = userSlice.actions;
+export const {  setUser , clearUser ,removeProfilePhoto} = userSlice.actions;
 export default userSlice.reducer;

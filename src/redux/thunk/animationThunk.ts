@@ -45,8 +45,9 @@ export const createAnimation = createAsyncThunk(
         const errorData = await res.json().catch(() => ({}));
         return rejectWithValue(errorData.message || "Failed to create animation");
       }
-
-      return await res.json(); // expected: { message, animationId }
+     const data = await res.json();
+      return { animationId: data.data.animationId, message: data.message };
+      // return await res.json(); // expected: { message, animationId }
     } catch (err: any) {
       return rejectWithValue(err.message);
     }
@@ -181,17 +182,58 @@ export const animationStatus = createAsyncThunk(
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log(res)
+       const data = await res.json();
+      console.log("🟡 Animation Status Response:", data);
 
       if (!res.ok) {
         const errorData = await res.json();
         return rejectWithValue(errorData.message || "Failed to fetch animation status");
       }
 
-      return await res.json(); // expected: { status: "pending" | "ready", videoUrl? }
+      return data // expected: { status: "pending" | "ready", videoUrl? }
     } catch (err: any) {
       return rejectWithValue(err.message);
     }
   }
 );
+
+export const publishAnimation = createAsyncThunk(
+  "animation/publish",
+  async (
+    { animationId, caption ,status}: { animationId: string; caption: string ;status: "PUBLISHED" | "DRAFT"},
+    { rejectWithValue }
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No auth token found");
+
+      const res = await fetch(
+        `http://localhost:8080/animations/${animationId}/status`,
+        {
+          method: "POST",
+          headers: {
+            "accept": "application/json",
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`, // ✅ must include token
+          },
+          body: JSON.stringify({
+            caption,
+            status
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        return rejectWithValue(errorData.message || "Failed to publish animation");
+      }
+
+      return await res.json(); // { success, data }
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
 

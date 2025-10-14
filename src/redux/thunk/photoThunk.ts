@@ -106,6 +106,34 @@ export const fetchTripPhotos = createAsyncThunk(
 
 
 
+export const deletePhoto = createAsyncThunk(
+  "photos/deletePhoto",
+  async (photoId: string, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token"); // replace with your auth method
+      if (!token) throw new Error("No token found");
+
+      const res = await fetch(`http://localhost:8080/photos/${photoId}`, {
+         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      console.log(res)
+       const data = await res.json();
+       if (!res.ok) {
+        return rejectWithValue(data); // handle error from server
+      }
+      return data.data; // return deleted photo data
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data || err.message);
+    }
+  }
+);
+
+
+
 
 
 // export const uploadBulkPhotos = createAsyncThunk(

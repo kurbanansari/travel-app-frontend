@@ -8,6 +8,7 @@ import React, { useEffect, useRef } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/redux/store";
 import { fetchProfile } from "@/redux/thunk/userThunk";
+import { Toaster } from "react-hot-toast";
 
 export default function HomeLayout({
   children,
@@ -29,7 +30,9 @@ const effectRan = useRef(false);
     }, [dispatch, user?.id]);
   return (
     <>
-          <AuthGuard>{children}</AuthGuard>
+          <AuthGuard>
+            <Toaster position="top-center" />
+            {children}</AuthGuard>
           <Footer />
      </>   
   );

@@ -1,10 +1,11 @@
 "use client"
 
 import { createSlice ,PayloadAction} from "@reduxjs/toolkit";
-import {  fetchTripPhotos, uploadPhoto} from "@/redux/thunk/photoThunk";
+import {  deletePhoto, fetchTripPhotos, uploadPhoto} from "@/redux/thunk/photoThunk";
+import toast from "react-hot-toast";
 
 
-interface Photo {
+export interface Photo {
   id: string;
   trip_id: string;
   user_id: string;
@@ -44,6 +45,9 @@ const photoSlice = createSlice({
   name: "photos",
   initialState,
   reducers: {
+    setPhotos: (state, action: PayloadAction<Photo[]>) => {
+      state.photos = action.payload;
+    },
      clearPhotos(state) {
       state.photos = [];
       state.error = null;
@@ -80,7 +84,36 @@ const photoSlice = createSlice({
     builder.addCase(fetchTripPhotos.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string || action.error.message || "Failed to fetch photos.";;
-    });
+    })
+    .addCase(deletePhoto.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(deletePhoto.fulfilled, (state, action) => {
+        state.loading = false;
+        // state.photos = state.photos.filter((p) => p.id !== action.payload.id);
+          const deletedId = action.payload?.id; // ✅ directly from payload
+  if (deletedId) {
+    state.photos = state.photos.filter((p) => p.id !== deletedId);
+  }
+         toast.success("Photo deleted successfully");
+      })
+      .addCase(deletePhoto.rejected, (state, action) => {
+        state.loading = false;
+        // ✅ Safely handle payload type
+        if (typeof action.payload === "string") {
+          state.error = action.payload;
+        } else if (
+          action.payload &&
+          typeof action.payload === "object" &&
+          "message" in action.payload
+        ) {
+          state.error = (action.payload as any).message;
+        } else {
+          state.error = "Failed to delete photo";
+        }
+        toast.error("Failed to delete photo");
+      });
 
     //   .addCase(uploadBulkPhotos.pending, (state) => {
     //     state.loading = true;
@@ -96,5 +129,5 @@ const photoSlice = createSlice({
     //   });
   },
 });
-
+export const { setPhotos } = photoSlice.actions;
 export default photoSlice.reducer;

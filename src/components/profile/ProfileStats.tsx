@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 
 type ProfileStatsProps = {
-  profile: any;
+  profile?: any;
   isOwnProfile: boolean;
   onFollow: () => void;
   onUnfollow: () => void;
@@ -16,15 +16,15 @@ export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfoll
     <div className="mt-6 flex flex-col items-center px-4">
       <div className="flex gap-8 mb-3 cursor-pointer">
         <div className="flex flex-col items-center">
-          <span className="font-bold text-xl">{profile.posts.toString().padStart(2, "0")}</span>
+          <span className="font-bold text-xl">{profile?.posts.toString().padStart(2, "0")}</span>
           <span className="text-xs text-gray-500 hover:text-gray-600">Posts</span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="font-bold text-xl">{profile.followers.toLocaleString()}</span>
+          <span className="font-bold text-xl">{profile?.followers.toLocaleString()}</span>
           <span className="text-xs text-gray-500 hover:text-gray-600">Followers</span>
         </div>
         <div className="flex flex-col items-center">
-          <span className="font-bold text-xl">{profile.following.toLocaleString()}</span>
+          <span className="font-bold text-xl">{profile?.following.toLocaleString()}</span>
           <span className="text-xs text-gray-500 hover:text-gray-600">Following</span>
         </div>
       </div>

@@ -155,6 +155,7 @@ function AnimationStylesContent() {
   const searchParams = useSearchParams();
 
   const tripId = searchParams.get("tripId");
+  const animationId = searchParams.get("animationId");
   const photoIdsParam = searchParams.get("photos");
   const selectedPhotos = photoIdsParam ? photoIdsParam.split(",") : [];
 

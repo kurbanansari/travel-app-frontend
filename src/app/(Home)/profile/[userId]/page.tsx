@@ -12,6 +12,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStats from "@/components/profile/ProfileStats";
 import TravelStats from "@/components/profile/TravelStats";
 import ProfilePhotosGrid from "@/components/profile/ProfilePhotosGrid";
+import { setPhotos } from "@/redux/slices/photoSlice";
 
 const ProfilePage = () => {
   const params = useParams();
@@ -21,6 +22,7 @@ const ProfilePage = () => {
 
   const { profile, loading, error, user } = useSelector((state: RootState) => state.user);
   const [followLoading, setFollowLoading] = useState(false);
+   const reduxPhotos = useSelector((state: RootState) => state.photos.photos);
 
   const isOwnProfile = profile?.id === user?.id;
   const effectRan = useRef(false);
@@ -35,6 +37,20 @@ const ProfilePage = () => {
     else dispatch(fetchUserProfileById(userId));
     effectRan.current = true;
   }, [userId, dispatch]);
+
+
+  useEffect(() => {
+  if (profile?.photos?.length && reduxPhotos.length === 0) {
+    const fullPhotos = profile.photos.map(p => ({
+      id: p.id,
+      url: p.url,
+      trip_id: "",
+      user_id: "",
+      created_at: "",
+    }));
+    dispatch(setPhotos(fullPhotos));
+  }
+}, [dispatch, profile?.photos, reduxPhotos.length]);
 
   const handleFollow = () => profile && dispatch(followUserProfile({ item: profile }));
   const handleUnfollow = () => profile && dispatch(unfollowUserProfile({ item: profile }));
@@ -55,7 +71,7 @@ const ProfilePage = () => {
       <TravelStats profile={profile} />
       <div className="mt-6 px-4">
         <h3 className="text-base font-semibold mb-3 text-gray-700 text-center border-b border-gray-200 pb-2">All Published Recaps & Photos</h3>
-        <ProfilePhotosGrid photos={profile?.photos} />
+        <ProfilePhotosGrid />
       </div>
     </div>
   );
