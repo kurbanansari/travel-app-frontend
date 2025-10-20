@@ -3,6 +3,7 @@ import { createSlice , PayloadAction  } from "@reduxjs/toolkit";
 import{  updateUserProfile, fetchUserProfileById, fetchProfile, uploadProfilePicture } from "../thunk/userThunk";
 import { followUserProfile, unfollowUserProfile } from "../thunk/feedThunk";
 import { Photo } from "./photoSlice";
+import { Animation } from "./animationSlice";
 // ✅ Types
 export type HomeLocation = {
   id: string;
@@ -20,10 +21,10 @@ export type HomeLocation = {
 //   url: string;
 // };
 
-export type Video = {
-  id: string;
-  url: string;
-};
+// export type Video = {
+//   id: string;
+//   url: string;
+// };
 
 export type Profile = {
   id: string;
@@ -38,7 +39,7 @@ export type Profile = {
   totalDistanceKm: number;
   daysSpentTraveling: number;
   photos: Photo[];
-  videos: Video[];
+  videos: Animation[];
   
   isFollowing?: boolean;
 };

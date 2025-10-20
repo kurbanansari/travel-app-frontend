@@ -1,5 +1,6 @@
 // redux/animationThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../services/api";
 
 
 export const createAnimation = createAsyncThunk(
@@ -55,54 +56,6 @@ export const createAnimation = createAsyncThunk(
 );
 
 
-// export const createAnimation = createAsyncThunk(
-//   "animation/create",
-//   async (
-//     {
-//       tripId,
-//       title,
-//       styleId,
-//       musicId,
-//       photoIds,
-//     }: {
-//       tripId: string;
-//       title: string;
-//       styleId: string;
-//       musicId: string;
-//       photoIds: string[];
-//     },
-//     { rejectWithValue }
-//   ) => {
-//     try {
-//       const token = localStorage.getItem("token"); // 👈 get token
-//       if (!token) throw new Error("No auth token found");
-
-//       const res = await fetch("http://localhost:8080/animations/create", {
-//         method: "POST",
-//         headers: {
-//           "Content-Type": "application/json",
-//           Authorization: `Bearer ${token}`, // 👈 add token here
-//         },
-//         body: JSON.stringify({
-//           trip_id: tripId,
-//           title,
-//           style_id: styleId,
-//           music_id: musicId,
-//           photo_ids: photoIds,
-//         }),
-//       });
-
-//       if (!res.ok) {
-//         const errorData = await res.json();
-//         return rejectWithValue(errorData.message || "Failed to create animation");
-//       }
-
-//       return await res.json(); // { message, animationId }
-//     } catch (err: any) {
-//       return rejectWithValue(err.message);
-//     }
-//   }
-// );
 
 // animation style
 export const animationStyles = createAsyncThunk(
@@ -236,4 +189,119 @@ export const publishAnimation = createAsyncThunk(
 );
 
 
+
+
+interface FetchUserAnimationsParams {
+  page?: number;
+  limit?: number;
+ 
+}
+
+export const fetchUserAnimations = createAsyncThunk<
+  { animations: any[]; pagination: any },
+  FetchUserAnimationsParams
+>(
+  "animations/fetchUserAnimations",
+  async ({ page = 1, limit = 20}, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No auth token found");
+
+      const res = await fetch(
+        `http://localhost:8080/animations/my?page=${page}&limit=${limit}`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const data = await res.json();
+      console.log("Fetched animations:", data.data);
+
+      if (!res.ok) {
+        return rejectWithValue(data.message || "Failed to fetch animations");
+      }
+
+      return {
+        animations: data.data || [],
+        pagination: data.pagination || null,
+      };
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
+
+
+export const fetchAnimationById = createAsyncThunk(
+  "animation/fetchById",
+  async (id: string, { getState, rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await api.get(`/animations/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      return response.data.data;
+    } catch (err: any) {
+      return rejectWithValue(err.response?.data?.message || err.message);
+    }
+  }
+);
+
+
+// export const deleteAnimation = createAsyncThunk<
+//   { id: string; deleted_at: string },
+//   string,
+//   {  rejectValue: string }
+// >(
+//   "animation/deleteAnimation",
+//   async (animationId, { getState, rejectWithValue }) => {
+//     try {
+//  const token = localStorage.getItem("token");// Assuming token is stored in user slice
+//       if (!token) return rejectWithValue("No authentication token");
+
+//       const res = await api.delete(
+//         `/animations/${animationId}`,
+//         {
+//           headers: {
+//             Authorization: `Bearer ${token}`,
+//             Accept: "application/json",
+//           },
+//         }
+//       );
+
+//       return res.data.data;
+//     } catch (error: any) {
+//       console.error("❌ Delete animation error:", error.response || error);
+//       return rejectWithValue(error.response?.data?.message || "Failed to delete animation");
+//     }
+//   }
+// );
+
+
+// animationThunk.ts
+export const deleteAnimation = createAsyncThunk(
+  "animation/deleteAnimation",
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await api.delete(`/animations/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      });
+      console.log(response)
+      return { id }; // ✅ return the ID
+    } catch (err: any) {
+      return rejectWithValue(err.message);
+    }
+  }
+);
 

@@ -232,7 +232,10 @@ const handleUnfollow = async () => {
         <AvatarImage src={item.user.profile_pic_url || ""} alt="{item.user.name}" />
         <AvatarFallback>
             {/* {item.user.name[0]}  */}
-            {item.user?.name?.[0] ?? "?"}
+            {/* {item.user?.name?.[0] ?? "?"} */}
+             <Link href={`/profile/${item.user.id}`} className="hover:underline">
+                  <span className="font-medium text-sm sm:text-base truncate">{item.user.name?.[0] ?? "?"}</span>
+          </Link>
         </AvatarFallback>
       </Avatar>
       <Link href={`/profile/${item.user.id}`} className="hover:underline">
@@ -265,28 +268,7 @@ const handleUnfollow = async () => {
   )
 )}
 
-    {/* {item.user.id !== localStorage.getItem("userId") &&
-      (item.user.isFollowing ? (
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={handleUnfollow}
-          disabled={followLoadingId === item.user.id}
-          className="text-xs sm:text-sm"
-        >
-          {followLoadingId === item.user.id ? "..." : "Following"}
-        </Button>
-      ) : (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleFollow}
-          disabled={followLoadingId === item.user.id}
-          className="text-xs sm:text-sm"
-        >
-          {followLoadingId === item.user.id ? "..." : "Follow"}
-        </Button>
-      ))} */}
+  
   </CardHeader>
 
   {/* Image */}

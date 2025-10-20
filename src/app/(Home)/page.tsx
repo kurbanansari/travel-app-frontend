@@ -102,7 +102,7 @@ const FeedPage = () => {
           )}
         </main>
       </Card>
-        <div className="fixed bottom-20 right-70 z-50">
+        <div className="fixed bottom-22 right-135 z-50">
             <button
               className="w-14 h-14 bg-emerald-500 rounded-full shadow-lg flex items-center justify-center hover:bg-emerald-600 transition"
               onClick={

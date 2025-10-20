@@ -129,5 +129,5 @@ const photoSlice = createSlice({
     //   });
   },
 });
-export const { setPhotos } = photoSlice.actions;
+export const { setPhotos,clearPhotos } = photoSlice.actions;
 export default photoSlice.reducer;

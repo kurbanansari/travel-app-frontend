@@ -12,7 +12,7 @@ import ProfileHeader from "@/components/profile/ProfileHeader";
 import ProfileStats from "@/components/profile/ProfileStats";
 import TravelStats from "@/components/profile/TravelStats";
 import ProfilePhotosGrid from "@/components/profile/ProfilePhotosGrid";
-import { setPhotos } from "@/redux/slices/photoSlice";
+import { clearPhotos, setPhotos } from "@/redux/slices/photoSlice";
 
 const ProfilePage = () => {
   const params = useParams();
@@ -31,6 +31,7 @@ const ProfilePage = () => {
     if (effectRan.current) return;
     if (!userId) {
       dispatch(clearUser());
+        dispatch(clearPhotos());
       return;
     }
     if (userId === "me") dispatch(fetchProfile());
@@ -40,17 +41,20 @@ const ProfilePage = () => {
 
 
   useEffect(() => {
-  if (profile?.photos?.length && reduxPhotos.length === 0) {
-    const fullPhotos = profile.photos.map(p => ({
+  if (!profile) return;
+
+  if (profile?.photos?.length) {
+    const formattedPhotos = profile.photos.map((p) => ({
       id: p.id,
       url: p.url,
       trip_id: "",
-      user_id: "",
-      created_at: "",
+      user_id: profile.id,
+      created_at: p.created_at || "",
     }));
-    dispatch(setPhotos(fullPhotos));
+
+    dispatch(setPhotos(formattedPhotos));
   }
-}, [dispatch, profile?.photos, reduxPhotos.length]);
+}, [dispatch, profile]);
 
   const handleFollow = () => profile && dispatch(followUserProfile({ item: profile }));
   const handleUnfollow = () => profile && dispatch(unfollowUserProfile({ item: profile }));
@@ -71,7 +75,7 @@ const ProfilePage = () => {
       <TravelStats profile={profile} />
       <div className="mt-6 px-4">
         <h3 className="text-base font-semibold mb-3 text-gray-700 text-center border-b border-gray-200 pb-2">All Published Recaps & Photos</h3>
-        <ProfilePhotosGrid />
+        <ProfilePhotosGrid  isOwnProfile={isOwnProfile}/>
       </div>
     </div>
   );
