@@ -71,8 +71,9 @@ const ProfilePage = () => {
   return (
     <div className="max-w-xl mx-auto min-h-screen bg-white pb-8">
       <ProfileHeader profile={profile} isOwnProfile={isOwnProfile} onBack={() => router.back()} />
-      <ProfileStats profile={profile} isOwnProfile={isOwnProfile} onFollow={handleFollow} onUnfollow={handleUnfollow} onSendMessage={handleSendMessage} followLoading={followLoading} />
-      <TravelStats profile={profile} />
+      {/* <ProfileStats profile={profile} isOwnProfile={isOwnProfile} onFollow={handleFollow} onUnfollow={handleUnfollow} 
+      onSendMessage={handleSendMessage} followLoading={followLoading} />*/}
+      <TravelStats profile={profile} /> 
       <div className="mt-6 px-4">
         <h3 className="text-base font-semibold mb-3 text-gray-700 text-center border-b border-gray-200 pb-2">All Published Recaps & Photos</h3>
         <ProfilePhotosGrid  isOwnProfile={isOwnProfile}/>
