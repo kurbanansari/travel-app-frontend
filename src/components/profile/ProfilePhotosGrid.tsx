@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/redux/store";
 import DeletePhotoButton from "./DeletePhotoButton";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { deleteAnimation, fetchAnimationById, fetchUserAnimations } from "@/redux/thunk/animationThunk";
 import { clearSelectedAnimation } from "@/redux/slices/animationSlice";
 import { motion, AnimatePresence } from "framer-motion";
@@ -14,7 +14,7 @@ import { clearPhotos } from "@/redux/slices/photoSlice";
 import { HiDotsVertical } from "react-icons/hi";
 import toast from "react-hot-toast";
 import { deletePhoto } from "@/redux/thunk/photoThunk";
-
+import { FaPause, FaPlay } from "react-icons/fa";
 type ProfilePhotosGridProps = {
   isOwnProfile: boolean;
 };
@@ -30,6 +30,9 @@ export default function ProfilePhotosGrid({ isOwnProfile }: ProfilePhotosGridPro
   const [modalOpen, setModalOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [menuOpen, setMenuOpen] = useState(false); 
+  const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+const [playingVideos, setPlayingVideos] = useState<{ [key: string]: boolean }>({});
+
   
   // Fetch animations
   useEffect(() => {
@@ -128,6 +131,44 @@ const nextItem = () => {
     toast.error("Failed to delete item");
   }
 };
+
+
+const handleToggleVideo = (id: string) => {
+  const video = videoRefs.current[id];
+  if (!video) return;
+
+  // If playing → pause
+  if (!video.paused) {
+    video.pause();
+    setPlayingVideos((prev) => ({ ...prev, [id]: false }));
+    return;
+  }
+
+  // Pause all others
+  Object.keys(videoRefs.current).forEach((vid) => {
+    const v = videoRefs.current[vid];
+    if (v && vid !== id) {
+      v.pause();
+      setPlayingVideos((prev) => ({ ...prev, [vid]: false }));
+    }
+  });
+
+  // Try to play the selected one
+  const playPromise = video.play();
+  if (playPromise !== undefined) {
+    playPromise
+      .then(() => {
+        setPlayingVideos((prev) => ({ ...prev, [id]: true }));
+      })
+      .catch((err) => {
+        console.warn("Video play blocked:", err);
+        setPlayingVideos((prev) => ({ ...prev, [id]: false }));
+      });
+  }
+};
+
+
+
     const currentItem = combinedMedia[currentIndex];
 
   if (!combinedMedia.length) {
@@ -135,7 +176,7 @@ const nextItem = () => {
   }
 
   return (
-    <>
+    <div className="mb-20">
       <div className="grid grid-cols-3 gap-3">
         {combinedMedia.map((item, idx) => (
           <div
@@ -154,14 +195,35 @@ const nextItem = () => {
     />
   </div>
             ) : (
-              <video src={item.url} className="w-full h-full object-cover rounded-lg" muted loop playsInline />
-              
+               <div className="relative w-full h-full">
+              <video 
+               ref={(el) => {
+                videoRefs.current[item.id] = el;
+               }}
+              src={item.url} 
+              className="w-full h-full object-cover rounded-lg" 
+               loop playsInline />
+               {/* Play/Pause Overlay Icon */}
+  <div
+    className="absolute bottom-3 left-3 cursor-pointer bg-white/40 p-2 rounded-full backdrop-blur-sm z-10"
+    onClick={(e) => {
+      e.stopPropagation(); // prevent modal open
+      handleToggleVideo(item.id);
+    }}
+  >
+    {playingVideos[item.id] ? (
+      <FaPause className="text-green-600 hover:text-green-700 text-xl" />
+    ) : (
+      <FaPlay className="text-green-600 hover:text-green-700 text-xl" />
+    )}
+  </div>
+           </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Modal */}
+      {/* Modal */}  
      
 <AnimatePresence>
   {modalOpen && currentItem && (
@@ -172,7 +234,7 @@ const nextItem = () => {
       exit={{ opacity: 0 }}
     >
       <motion.div
-        className="relative bg-white rounded-lg p-4 max-w-2xl w-full"
+        className="relative bg-white rounded-lg p-4 max-w-xl w-full"
         initial={{ scale: 0.8 }}
         animate={{ scale: 1 }}
         exit={{ scale: 0.8 }}
@@ -239,7 +301,7 @@ const nextItem = () => {
               src={currentItem.url}
               width={600}
               height={600}
-              className="w-full max-h-[80vh] object-contain rounded-lg"
+              className="w-full max-h-[90vh] object-contain rounded-lg"
               alt="photo"
             />
           </div>
@@ -255,7 +317,7 @@ const nextItem = () => {
                 <video
                   src={selectedAnimation.video_url}
                   controls
-                  className="w-full max-h-[70vh] object-contain rounded-lg"
+                  className="w-full max-h-[100vh] object-contain rounded-lg"
                 />
                 <p className="text-sm text-gray-300">
                   Style: {selectedAnimation?.animation_style?.name || "N/A"}
@@ -277,6 +339,6 @@ const nextItem = () => {
   )}
 </AnimatePresence>
 
-    </>
+    </div>
   );
 }

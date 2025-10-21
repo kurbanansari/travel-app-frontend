@@ -13,7 +13,7 @@ type ProfileStatsProps = {
 
 export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfollow, onSendMessage, followLoading }: ProfileStatsProps) {
   return (
-    <div className=" flex flex-col mt-10">
+    <div className=" flex flex-col mt-10 ">
       <div className="flex gap-8 mb-3 cursor-pointer">
         <div className="flex flex-col items-center">
           <span className="font-bold text-xl">{profile?.posts.toString().padStart(2, "0")}</span>
@@ -30,7 +30,7 @@ export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfoll
       </div>
 
 
-      {!isOwnProfile && (
+      {/* {!isOwnProfile && (
         <div className=" flex flex-cols-2 gap-3 cursor-pointer mt-4 max-w-xs">
           {profile.isFollowing ? (
             <Button
@@ -56,7 +56,7 @@ export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfoll
             Send Message
           </Button>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

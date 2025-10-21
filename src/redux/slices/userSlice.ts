@@ -143,12 +143,14 @@ const userSlice = createSlice({
     .addCase(followUserProfile.fulfilled, (state, action) => {
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = true;
+    state.profile.followers = (state.profile.followers || 0) + 1;
   }
   
 })  
 .addCase(unfollowUserProfile.fulfilled, (state, action) => {
   if (state.profile && state.profile.id === action.payload.id) {
     state.profile.isFollowing = false;
+    state.profile.followers = Math.max((state.profile.followers || 1) - 1, 0);
   }
   
 });
