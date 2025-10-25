@@ -34,8 +34,8 @@ const effectRan = useRef(false);
   if (loading) return <div className="p-6 text-center">Loading photos...</div>;
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-green-50 px-2 sm:px-4">
-      <Card className="w-full max-w-xl mt-8 rounded-2xl shadow-lg bg-green-100 relative">
+    <div className="flex items-center justify-center min-h-screen bg-emerald-50 px-2 sm:px-4">
+      <Card className="w-full max-w-xl mt-8 rounded-2xl shadow-lg bg-emerald-100 relative">
         <CardHeader className="pt-6 pb-6">
           <CardTitle className="text-2xl font-bold text-center">
             {currentTrip ? currentTrip?.title : "Trip"}
@@ -65,7 +65,7 @@ const effectRan = useRef(false);
                     `/animation/animationStyle?tripId=${tripId}&photos=${selectedPhotos.join(",")}`
                   )
                 }
-                className="bg-green-700 p-4 pl-10 pr-10 hover:bg-green-800"
+                className="bg-emerald-700 p-4 pl-10 pr-10 hover:bg-emerald-800"
               >
                 Proceed
               </Button>

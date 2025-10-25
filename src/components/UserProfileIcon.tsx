@@ -15,41 +15,11 @@ const UserProfileIcon = ({className}:UserProfileIconProps)=> {
   const dispatch = useDispatch<AppDispatch>();
    const { user} = useSelector((state: RootState) => state.user);
 const effectRan = useRef(false);
-  // ✅ Fetch profile if not already loaded
-  // useEffect(() => {
-  //     if (!effectRan.current) { 
-  //     dispatch(fetchProfile());
-  //     effectRan.current = true;
-  // }
-  // }, [dispatch]);
-  // useEffect(() => {
   
-  //   if (!user?.id) {
-  //     dispatch(fetchProfile());
-  //   }
-  // }, [user?.id, dispatch]);
-// useEffect(() => {
-//     if (!user?.id) {
-//       dispatch(fetchProfile());
-//     }
-//   }, [user?.id, dispatch]);
-// useEffect(() => {
-//     if (effectRan.current) return;
-//     if (!user?.id) {
-//       dispatch(fetchProfile());
-//     }
-//     effectRan.current = true;
-//   }, [dispatch, user?.id]);
 
   return (
    
-//     <Avatar>
-//       <AvatarImage
-//   src={user?.profilePic ?? undefined}
-//   alt={user?.name || "User"}
-// />
-//       <AvatarFallback>{user?.name?.[0] || "?"}</AvatarFallback>
-//     </Avatar>
+
 <Avatar className={`w-8 h-8 border border-emerald-200 transition-all duration-200 ease-in-out ${className}`}>
       <AvatarImage
         src={user?.profilePic ?? undefined}

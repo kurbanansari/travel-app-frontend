@@ -251,7 +251,7 @@ const handleUnfollow = async () => {
       size="sm"
       onClick={handleUnfollow}
       disabled={followLoadingId === item.user.id}
-      className="text-xs sm:text-sm"
+      className="text-xs sm:text-sm bg-emerald-600 text-white"
     >
       {followLoadingId === item.user.id ? "..." : "Following"}
     </Button>

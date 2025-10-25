@@ -24,6 +24,8 @@ export default function ProfilePhotosGrid({ isOwnProfile }: ProfilePhotosGridPro
   const { animations, loading, pagination, selectedAnimation, loadingSelected } = useSelector(
     (state: RootState) => state.animation
   );
+  const { styles, music } = useSelector((state: RootState) => state.animation);
+const { list } = useSelector((state: RootState) => state.trips);
   const { photos } = useSelector((state: RootState) => state.photos);
   const { profile } = useSelector((state: RootState) => state.user);
 
@@ -41,7 +43,10 @@ const [playingVideos, setPlayingVideos] = useState<{ [key: string]: boolean }>({
   }, [dispatch, profile?.id]);
 
   const userAnimations = animations.filter(a => a.user_id === profile?.id);
-
+const animationStyle = styles.find(s => s.id === selectedAnimation.animation_style_id);
+const musicTrack = music.find(m => m.id === selectedAnimation.music_track_id);
+const trip = list.find(t => t.id === selectedAnimation.trip_id); 
+  
   const combinedMedia = useMemo(() => {
     const photoItems = photos?.map(photo => ({
       id: photo.id,
@@ -212,9 +217,9 @@ const handleToggleVideo = (id: string) => {
     }}
   >
     {playingVideos[item.id] ? (
-      <FaPause className="text-green-600 hover:text-green-700 text-xl" />
+      <FaPause className="text-emerald-600 hover:text-emerald-700 text-xl" />
     ) : (
-      <FaPlay className="text-green-600 hover:text-green-700 text-xl" />
+      <FaPlay className="text-emerald-600 hover:text-emerald-700 text-xl" />
     )}
   </div>
            </div>
@@ -309,10 +314,12 @@ const handleToggleVideo = (id: string) => {
 
         {currentItem.type === "video" && (
           <>
-            {loadingSelected ? (
+            {loadingSelected || !selectedAnimation ? (
               <p className="text-white text-center py-10">Loading...</p>
-            ) : selectedAnimation ? (
+            ) : selectedAnimation ?  (
+              
               <div className="flex flex-col gap-2">
+                
                 <h2 className="text-lg font-semibold text-center">{selectedAnimation.title}</h2>
                 <video
                   src={selectedAnimation.video_url}
@@ -320,13 +327,13 @@ const handleToggleVideo = (id: string) => {
                   className="w-full max-h-[100vh] object-contain rounded-lg"
                 />
                 <p className="text-sm text-gray-300">
-                  Style: {selectedAnimation?.animation_style?.name || "N/A"}
+                  Style: {animationStyle?.name ?? "N/A"}
                 </p>
                 <p className="text-sm text-gray-300">
-                  Music: {selectedAnimation.music_track?.title || "N/A"} - {selectedAnimation.music_track?.artist || "N/A"}
+                  Music: {musicTrack?.title || "N/A"} - {musicTrack?.artist || "N/A"}
                 </p>
                 <p className="text-sm text-gray-300">
-                  Trip: {selectedAnimation.trip?.title || "N/A"}
+                  Trip: {trip?.title ?? "N/A"}
                 </p>
               </div>
             ) : (

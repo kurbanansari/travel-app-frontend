@@ -4,14 +4,10 @@ import { Button } from "@/components/ui/button";
 
 type ProfileStatsProps = {
   profile?: any;
-  isOwnProfile: boolean;
-  onFollow: () => void;
-  onUnfollow: () => void;
-  onSendMessage: () => void;
-  followLoading: boolean;
+  
 };
 
-export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfollow, onSendMessage, followLoading }: ProfileStatsProps) {
+export default function ProfileStats({ profile}: ProfileStatsProps) {
   return (
     <div className=" flex flex-col mt-10 ">
       <div className="flex gap-8 mb-3 cursor-pointer">
@@ -29,34 +25,6 @@ export default function ProfileStats({ profile, isOwnProfile, onFollow, onUnfoll
         </div>
       </div>
 
-
-      {/* {!isOwnProfile && (
-        <div className=" flex flex-cols-2 gap-3 cursor-pointer mt-4 max-w-xs">
-          {profile.isFollowing ? (
-            <Button
-              className="bg-green-600 text-white text-sm rounded-full font-semibold shadow hover:bg-green-700 transition"
-              onClick={onUnfollow}
-              disabled={followLoading}
-            >
-              {followLoading ? "..." : "Following"}
-            </Button>
-          ) : (
-            <Button
-              className="bg-green-600 text-white rounded-full font-semibold text-sm shadow hover:bg-green-700 transition"
-              onClick={onFollow}
-              disabled={followLoading}
-            >
-              {followLoading ? "..." : "Follow"}
-            </Button>
-          )}
-          <Button
-            className="bg-white border border-green-600 text-green-600 rounded-full font-semibold text-sm shadow hover:bg-green-50 transition"
-            onClick={onSendMessage}
-          >
-            Send Message
-          </Button>
-        </div>
-      )} */}
     </div>
   );
 }

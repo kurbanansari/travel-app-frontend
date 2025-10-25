@@ -92,7 +92,7 @@
 
 
 import {Suspense} from 'react'
-import AnimationPageContent from "@/components/AnimationPageContent"
+import AnimationPageContent from "@/components/animation/AnimationPageContent"
 export default function AnimationPage() {
   return (
     <Suspense fallback={<div className="p-6 text-center">Loading...</div>}>

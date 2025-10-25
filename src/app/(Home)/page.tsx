@@ -45,8 +45,9 @@ const FeedPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br bg-green-50 px-2 sm:px-4">
-      <Card className="w-full max-w-xl mt-6 mb-20 shadow-lg rounded-2xl border bg-green-100 relative">
+    <div className="min-h-screen bg-gradient-to-br bg-green-50 px-2 sm:px-4 relative">
+       <div className="flex items-center justify-center">
+      <Card className="w-full max-w-xl mb-20 shadow-lg rounded-2xl border bg-green-100 relative">
         <Header />
         <main className="w-full max-w-xl mx-auto pt-3 pb-3  sm:px-0 relative">
           {loading && (
@@ -102,18 +103,33 @@ const FeedPage = () => {
           )}
         </main>
       </Card>
-        <div className="fixed bottom-22 right-135 z-50">
-            <button
-              className="w-14 h-14 bg-emerald-500 rounded-full shadow-lg flex items-center justify-center hover:bg-emerald-600 transition"
-              onClick={
-                () =>
-                  router.push("/chat") /* Add your open chat handler here */
-              }
-            >
-              {/* Use any icon, e.g., Chat icon from lucide-react */}
-             <LuMessageCircleMore size={30} color="white"/>
-            </button>
-          </div>
+      </div>
+       
+    
+  {/* ✅ Fixed Chat Button aligned to Card */}
+  <div
+    className="fixed z-50 bottom-[4.5rem] sm:bottom-[5rem]"
+    style={{
+      left: "50%",
+      transform: "translateX(calc(200px - 50%))", // aligns with right edge of max-w-xl (≈24rem)
+    }}
+  >
+    <button
+      onClick={() => router.push("/chat")}
+      className="
+      w-12 h-12 sm:w-16 sm:h-16 
+      bg-gradient-to-br from-emerald-500 to-emerald-600 
+      rounded-full shadow-xl flex items-center justify-center
+      hover:scale-110 hover:shadow-2xl 
+      transition-all duration-300 ease-out 
+      active:scale-95
+      backdrop-blur-sm border border-emerald-300/30
+    "
+    >
+      <LuMessageCircleMore size={35} color="white" />
+    </button>
+  </div>
+          
     </div>
   );
 };

@@ -110,8 +110,8 @@ useEffect(() => {
   // };
 
   return (
-  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br bg-green-50 px-2 sm:px-4">
-      <Card className="w-full max-w-xl shadow-lg rounded-2xl border mb-20 bg-green-100 relative pl-3 pr-3">
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br bg-emerald-50 px-2 sm:px-4">
+      <Card className="w-full max-w-xl shadow-lg rounded-2xl border mb-20 bg-emerald-100 relative pl-3 pr-3">
         {/* 🔹 Loading skeleton */}
         {loading && trips.length === 0 ? (
           <div className="p-6 space-y-6">
@@ -138,7 +138,7 @@ useEffect(() => {
                 <div className="mb-3 mt-6 ml-5">
                   <h1 className="text-lg font-medium">
                     Welcome{" "}
-                    <span className="text-green-600 text-2xl"> {user?.name}</span>
+                    <span className="text-emerald-600 text-2xl"> {user?.name}</span>
                   </h1>
                 </div>
 
@@ -164,7 +164,7 @@ useEffect(() => {
               <div className="w-full flex justify-end">
                 <Dialog open={open} onOpenChange={setOpen}>
                   <DialogTrigger asChild>
-                    <Button className="bg-green-600 hover:bg-green-700 text-white shadow-lg rounded-2xl px-6 py-3">
+                    <Button className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg rounded-2xl px-6 py-3">
                       {starting ? "Loading..." : "Start New Trip"}
                     </Button>
                   </DialogTrigger>

@@ -17,7 +17,7 @@ import { fetchTripPhotos, uploadPhoto } from "@/redux/thunk/photoThunk";
 import toast from "react-hot-toast";
 
 import { Skeleton } from "@/components/ui/skeleton";
-import { SmartImage } from "@/components/ui/SmartImage";
+
 import TripPhotos from "@/components/TripPhotos";
 import { updateTripCover } from "@/redux/slices/tripSlice";
 
@@ -146,10 +146,10 @@ if (tripLoading || photosLoading) {
     );
   }
   return (
- <div className="flex items-center justify-center min-h-screen bg-green-50 px-2 pb-24 sm:px-4">
-  <Card className="w-full max-w-xl mt-8 rounded-2xl shadow-lg bg-green-100">
+ <div className="flex items-center justify-center min-h-screen bg-green-50 px-2 pb-10 sm:px-4">
+  <Card className="w-full max-w-xl mt-1 rounded-2xl shadow-lg bg-green-100">
     <CardHeader className="flex justify-between items-center">
-      <h1 className="text-2xl font-bold text-center flex-1">Trip Details</h1>
+      <h1 className="text-2xl font-bold text-center m-2 flex-1">Trip Details</h1>
     </CardHeader>
 
     <CardContent>
@@ -168,7 +168,7 @@ if (tripLoading || photosLoading) {
       <DialogTrigger asChild>
         <Button
           size="lg"
-          className="w-full bg-green-700 hover:bg-green-800 mt-4 mb-4"
+          className="w-full bg-emerald-700 hover:bg-emerald-800 mt-4 mb-4"
         >
           Upload Photo
         </Button>
@@ -216,7 +216,7 @@ if (tripLoading || photosLoading) {
               setCaption("");
             }}
             disabled={!file}
-            className="w-full bg-green-700 hover:bg-green-800"
+            className="w-full bg-emerald-700 hover:bg-emerald-800"
           >
             Share
           </Button>
@@ -227,7 +227,7 @@ if (tripLoading || photosLoading) {
      <TripPhotos />
       <div> 
     <Button
-      className="w-full bg-green-700 hover:bg-green-800 mt-4"
+      className="w-full bg-emerald-700 hover:bg-emerald-800 mt-4"
       onClick={() => router.push(`/animation?tripId=${tripId}`)}
        >
       Generate Animation

@@ -138,8 +138,7 @@ export default function ProfileHeader({
           
         </div>
         
-         <ProfileStats profile={profile} isOwnProfile={isOwnProfile} onFollow={handleFollow} 
-           onUnfollow={handleUnfollow} onSendMessage={handleSendMessage} followLoading={followLoading} />
+         <ProfileStats profile={profile}/>
       </div>
       <div className="absolute top-40 left-8">
       <h3 className="font-bold text-xl">{profile?.name}</h3>
@@ -151,7 +150,7 @@ export default function ProfileHeader({
       {profile.isFollowing ? (
         <Button
           
-          className="!py-4 bg-green-600 px-8 text-white text-sm rounded-full  font-semibold shadow hover:bg-green-700 transition"
+          className="!py-4 bg-emerald-600 px-8 text-white text-sm rounded-full  font-semibold shadow hover:bg-emerald-700 transition"
           onClick={handleUnfollow}
           disabled={followLoading}
         >
@@ -159,7 +158,7 @@ export default function ProfileHeader({
         </Button>
       ) : (
         <Button
-          className="!py-4 bg-green-600 text-white rounded-full  font-semibold text-sm shadow hover:bg-green-700 transition"
+          className="!py-4 bg-white border border-green-600 text-green-600 rounded-full  font-semibold text-sm shadow hover:bg-green-50 transition"
           onClick={handleFollow}
           disabled={followLoading}
         >
